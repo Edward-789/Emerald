@@ -106,19 +106,17 @@ impl Board {
             println!();
             println!("{}", labels[i]);
 
-            for j in 0..64 {
-                if j % 8 == 0 && i != 0 {
-                    println!();
+            for rank in (0..8).rev() {
+                for file in 0..8 {
+                    let square = rank * 8 + file;
+                    if (self.bitboards[i] >> square) & 1u64 == 1u64 {
+                        print!("X");
+                    } else {
+                        print!(".");
+                    }
                 }
-
-                let mask = 1u64 << j;
-                if (self.bitboards[i] & mask) != 0 {
-                    print!("1");
-                } else {
-                    print!("0");
-                }
+                println!();
             }
-            
             println!();
         }
     }

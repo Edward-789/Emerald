@@ -4,6 +4,7 @@ pub enum Colour {
 }
 
 pub enum Pieces {
+    None = 0,
     Pawn = 2,
     Knight = 3,
     Bishop = 4,
