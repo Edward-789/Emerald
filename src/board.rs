@@ -27,6 +27,10 @@ impl Board {
         }
     }
 
+    pub fn find_square(file : u16, rank : u16) -> usize {
+        (rank * 8 + file).into()
+    }
+
     pub fn read_fen(fen: &str) -> Self {
         let fen_split = fen.split(' ').collect::<Vec<&str>>();
         let pieces = fen_split[0].chars().collect::<Vec<char>>();
@@ -106,7 +110,7 @@ impl Board {
         println!("{}", self.en_passant_sq);
     }
 
-    fn print_bitboard(bitboard : u64) {
+    pub fn print_bitboard(bitboard : u64) {
         for rank in (0..8).rev() {
             for file in 0..8 {
                 let square = rank * 8 + file;
