@@ -89,7 +89,13 @@ impl Board {
     pub fn print_board_info(&self) {
         println!("Bitboards");
 
-        self.print_bitboards();
+        let labels = ["White", "Black", "Pawns", "Knights", "Bishop", "Rooks", "Queens", "Kings"];
+        for i in 0..7 {
+            println!();
+            println!("{}", labels[i]);
+            Self::print_bitboard(self.bitboards[i]);
+            println!();
+        }
 
         print!("Whites move : ");
         println!("{}", self.whites_move);
@@ -100,22 +106,15 @@ impl Board {
         println!("{}", self.en_passant_sq);
     }
 
-    fn print_bitboards(&self) {
-        let labels = ["White", "Black", "Pawns", "Knights", "Bishop", "Rooks", "Queens", "Kings"];
-        for i in 0..7 {
-            println!();
-            println!("{}", labels[i]);
-
-            for rank in (0..8).rev() {
-                for file in 0..8 {
-                    let square = rank * 8 + file;
-                    if (self.bitboards[i] >> square) & 1u64 == 1u64 {
-                        print!("X");
-                    } else {
-                        print!(".");
-                    }
+    fn print_bitboard(bitboard : u64) {
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let square = rank * 8 + file;
+                if (bitboard >> square) & 1u64 == 1u64 {
+                    print!("X ");
+                } else {
+                    print!(". ");
                 }
-                println!();
             }
             println!();
         }
