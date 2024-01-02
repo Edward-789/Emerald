@@ -3,11 +3,8 @@ mod consts;
 mod attacks;
 
 use crate::{
-    consts::{
-        Colour
-    },
     board::Board,
-    attacks::Attacks
+    attacks::Attacks,
 };
 
 fn main() { 
@@ -15,9 +12,9 @@ fn main() {
     board.print_board_info();
     println!("Attacks");
 
-    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(1, 7), Colour::White));
+    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(1, 7), 0));
     println!();
-    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(3, 3), Colour::White));
+    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(3, 3), 0));
     println!();
-    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(3, 3), Colour::Black));
+    Board::print_bitboard(Attacks::slow_pawn_attacks(Board::find_square(3, 3), 1));
 }
