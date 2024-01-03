@@ -6,7 +6,9 @@ use crate::{
 };
 
 static mut PAWN_TABLES: [u64; 128] = [0; 128];
-static mut KNIGHT_TABLES: [u64; 128] = [0; 128];
+static mut KNIGHT_TABLES: [u64; 64] = [0; 64];
+static mut KING_TABLES: [u64; 64] = [0; 64];
+
 
 pub struct Attacks;
 impl Attacks {
@@ -19,6 +21,9 @@ impl Attacks {
 
                 //knight tables
                 KNIGHT_TABLES[i] = Self::slow_knight_attacks(i);
+
+                //king tables
+                KING_TABLES[i] = Self::slow_king_attacks(i)
             }
         }
     }
@@ -29,6 +34,10 @@ impl Attacks {
 
     pub fn knight_attacks(square : usize) -> u64 {
         unsafe { KNIGHT_TABLES[square] }
+    }
+
+    pub fn king_attacks(square : usize) -> u64 {
+        unsafe { KING_TABLES[square] }
     }
 
     fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
@@ -51,5 +60,18 @@ impl Attacks {
         shifts::shift_south(shifts::shift_south(shifts::shift_west(knight))) |
         shifts::shift_west(shifts::shift_west(shifts::shift_north(knight))) |
         shifts::shift_west(shifts::shift_west(shifts::shift_south(knight)))
+    }
+
+    fn slow_king_attacks(square : usize) -> u64 {
+        let king = 1 << square;
+
+        shifts::shift_east(king) |
+        shifts::shift_west(king) |
+        shifts::shift_north(king) |
+        shifts::shift_south(king) |
+        shifts::shift_east(shifts::shift_north(king)) |
+        shifts::shift_east(shifts::shift_south(king)) |
+        shifts::shift_west(shifts::shift_north(king)) |
+        shifts::shift_west(shifts::shift_south(king))
     }
 }   

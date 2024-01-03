@@ -12,9 +12,9 @@ fn main() {
     Attacks::init_tables();
     println!("Attacks");
 
-    Board::print_bitboard(Attacks::knight_attacks(Board::find_square(1, 7)));
+    Board::print_bitboard(Attacks::king_attacks(Board::find_square(1, 7)));
     println!();
-    Board::print_bitboard(Attacks::knight_attacks(Board::find_square(3, 3)));
+    Board::print_bitboard(Attacks::king_attacks(Board::find_square(3, 3)));
     println!();
-    Board::print_bitboard(Attacks::knight_attacks(Board::find_square(3, 3)));
+    Board::print_bitboard(Attacks::king_attacks(Board::find_square(3, 3)));
 } 
