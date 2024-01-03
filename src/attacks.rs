@@ -1,9 +1,23 @@
-    use crate::consts::{
-        Colour,
-    };
+use crate::consts::{
+    Colour,
+};
+
+static mut PAWN_TABLES: [u64; 128] = [0; 128];
 
 pub struct Attacks;
 impl Attacks {
+   pub fn init_tables() {
+        unsafe {
+            //pawn tables
+            for i in 0..64 {
+                PAWN_TABLES[i] = Self::slow_pawn_attacks(i, 0);
+                PAWN_TABLES[i + 64] = Self::slow_pawn_attacks(i, 1);
+            }
+        }
+    }
+    pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
+        unsafe { PAWN_TABLES[square + (64 * colour_num)] }
+    }
     pub fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
         assert!(colour_num == 1 || colour_num == 0);
 
@@ -28,4 +42,6 @@ impl Attacks {
 
         (1u64 << square_diagonal_left) | (1u64 << square_diagonal_right)
     }
+
+    
 }   
