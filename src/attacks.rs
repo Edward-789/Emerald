@@ -18,7 +18,7 @@ impl Attacks {
     pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
         unsafe { PAWN_TABLES[square + (64 * colour_num)] }
     }
-    pub fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
+    fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
         assert!(colour_num == 1 || colour_num == 0);
 
         let colour = if colour_num == 0 {Colour::White} else {Colour::Black};
@@ -32,15 +32,12 @@ impl Attacks {
 
         let file = square % 8;
 
-        if file == 0 {
-            return 1u64 << square_diagonal_right
+        match file {
+            0 => 1u64 << square_diagonal_right,
+            7 => 1u64 << square_diagonal_left,
+            _ => (1u64 << square_diagonal_left) | (1u64 << square_diagonal_right),
         }
 
-        if file == 7 {
-            return 1u64 << square_diagonal_left 
-        }
-
-        (1u64 << square_diagonal_left) | (1u64 << square_diagonal_right)
     }
 
     
