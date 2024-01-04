@@ -1,10 +1,3 @@
-use crate::{
-    consts::Colour,
-    utils::{
-        shifts
-    }
-};
-
 static mut PAWN_TABLES: [u64; 128] = [0; 128];
 static mut KNIGHT_TABLES: [u64; 64] = [0; 64];
 static mut KING_TABLES: [u64; 64] = [0; 64];
@@ -28,6 +21,22 @@ impl Attacks {
         }
     }
 
+    pub fn shift_north(bitboard : u64) -> u64 {
+        bitboard << 8
+    }
+
+    pub fn shift_south(bitboard : u64) -> u64 {
+        bitboard >> 8
+    }
+
+    pub fn shift_east(bitboard : u64) -> u64 {
+        (bitboard << 1) & !0x0101010101010101 // A-FILE
+    }
+
+    pub fn shift_west(bitboard : u64) -> u64 {
+        (bitboard >> 1) & !0x8080808080808080 //H-FILE
+    }
+
     pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
         unsafe { PAWN_TABLES[square + (64 * colour_num)] }
     }
@@ -44,34 +53,34 @@ impl Attacks {
         assert!(colour_num == 1 || colour_num == 0);
 
         let pawn = 1 << square;
-        let pawn_push = if colour_num == 0 { shifts::shift_north(pawn) } else { shifts::shift_south(pawn) };
+        let pawn_push = if colour_num == 0 { Self::shift_north(pawn) } else { Self::shift_south(pawn) };
 
-        shifts::shift_west(pawn_push) | shifts::shift_east(pawn_push)
+        Self::shift_west(pawn_push) | Self::shift_east(pawn_push)
     }
 
     fn slow_knight_attacks(square : usize) -> u64 {
         let knight = 1 << square;
 
-        shifts::shift_north(shifts::shift_north(shifts::shift_east(knight))) |
-        shifts::shift_north(shifts::shift_north(shifts::shift_west(knight))) |
-        shifts::shift_east(shifts::shift_east(shifts::shift_north(knight))) |
-        shifts::shift_east(shifts::shift_east(shifts::shift_south(knight))) |
-        shifts::shift_south(shifts::shift_south(shifts::shift_east(knight))) |
-        shifts::shift_south(shifts::shift_south(shifts::shift_west(knight))) |
-        shifts::shift_west(shifts::shift_west(shifts::shift_north(knight))) |
-        shifts::shift_west(shifts::shift_west(shifts::shift_south(knight)))
+        Self::shift_north(Self::shift_north(Self::shift_east(knight))) |
+        Self::shift_north(Self::shift_north(Self::shift_west(knight))) |
+        Self::shift_east(Self::shift_east(Self::shift_north(knight))) |
+        Self::shift_east(Self::shift_east(Self::shift_south(knight))) |
+        Self::shift_south(Self::shift_south(Self::shift_east(knight))) |
+        Self::shift_south(Self::shift_south(Self::shift_west(knight))) |
+        Self::shift_west(Self::shift_west(Self::shift_north(knight))) |
+        Self::shift_west(Self::shift_west(Self::shift_south(knight)))
     }
 
     fn slow_king_attacks(square : usize) -> u64 {
         let king = 1 << square;
 
-        shifts::shift_east(king) |
-        shifts::shift_west(king) |
-        shifts::shift_north(king) |
-        shifts::shift_south(king) |
-        shifts::shift_east(shifts::shift_north(king)) |
-        shifts::shift_east(shifts::shift_south(king)) |
-        shifts::shift_west(shifts::shift_north(king)) |
-        shifts::shift_west(shifts::shift_south(king))
+        Self::shift_east(king) |
+        Self::shift_west(king) |
+        Self::shift_north(king) |
+        Self::shift_south(king) |
+        Self::shift_east(Self::shift_north(king)) |
+        Self::shift_east(Self::shift_south(king)) |
+        Self::shift_west(Self::shift_north(king)) |
+        Self::shift_west(Self::shift_south(king))
     }
 }   

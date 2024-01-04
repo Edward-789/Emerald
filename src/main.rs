@@ -1,7 +1,6 @@
 mod board;
 mod consts;
 mod attacks;
-mod utils;
 
 use crate::{
     board::Board,
