@@ -8,7 +8,6 @@ use crate::{
 };
 
 fn main() { 
-    Attacks::init_tables();
     println!("Attacks");
 
     Board::print_bitboard(Attacks::king_attacks(Board::find_square(1, 7)));

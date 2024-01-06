@@ -1,55 +1,38 @@
-static mut PAWN_TABLES: [u64; 128] = [0; 128];
-static mut KNIGHT_TABLES: [u64; 64] = [0; 64];
-static mut KING_TABLES: [u64; 64] = [0; 64];
-
-
 pub struct Attacks;
 impl Attacks {
-   pub fn init_tables() {
-        unsafe {
-            for i in 0..64 {
-                //pawn tables
-                PAWN_TABLES[i] = Self::slow_pawn_attacks(i, 0);
-                PAWN_TABLES[i + 64] = Self::slow_pawn_attacks(i, 1);
 
-                //knight tables
-                KNIGHT_TABLES[i] = Self::slow_knight_attacks(i);
-
-                //king tables
-                KING_TABLES[i] = Self::slow_king_attacks(i)
-            }
-        }
-    }
-
-    pub fn shift_north(bitboard : u64) -> u64 {
+    // SHIFTS
+    const fn shift_north(bitboard : u64) -> u64 {
         bitboard << 8
     }
 
-    pub fn shift_south(bitboard : u64) -> u64 {
+    const fn shift_south(bitboard : u64) -> u64 {
         bitboard >> 8
     }
 
-    pub fn shift_east(bitboard : u64) -> u64 {
+    const fn shift_east(bitboard : u64) -> u64 {
         (bitboard << 1) & !0x0101010101010101 // A-FILE
     }
 
-    pub fn shift_west(bitboard : u64) -> u64 {
+    const fn shift_west(bitboard : u64) -> u64 {
         (bitboard >> 1) & !0x8080808080808080 //H-FILE
     }
 
+    // LOOKUP TABLES
     pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
-        unsafe { PAWN_TABLES[square + (64 * colour_num)] }
+        PAWN_TABLES[square + (64 * colour_num)]
     }
 
     pub fn knight_attacks(square : usize) -> u64 {
-        unsafe { KNIGHT_TABLES[square] }
+        KNIGHT_TABLES[square]
     }
 
     pub fn king_attacks(square : usize) -> u64 {
-        unsafe { KING_TABLES[square] }
+        KING_TABLES[square]
     }
 
-    fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
+    // ATTACK FUNCTIONS
+    const fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
         assert!(colour_num == 1 || colour_num == 0);
 
         let pawn = 1 << square;
@@ -58,7 +41,7 @@ impl Attacks {
         Self::shift_west(pawn_push) | Self::shift_east(pawn_push)
     }
 
-    fn slow_knight_attacks(square : usize) -> u64 {
+    const fn slow_knight_attacks(square : usize) -> u64 {
         let knight = 1 << square;
 
         Self::shift_north(Self::shift_north(Self::shift_east(knight))) |
@@ -71,7 +54,7 @@ impl Attacks {
         Self::shift_west(Self::shift_west(Self::shift_south(knight)))
     }
 
-    fn slow_king_attacks(square : usize) -> u64 {
+    const fn slow_king_attacks(square : usize) -> u64 {
         let king = 1 << square;
 
         Self::shift_east(king) |
@@ -84,3 +67,40 @@ impl Attacks {
         Self::shift_west(Self::shift_south(king))
     }
 }   
+
+const PAWN_TABLES: [u64; 128] = {
+    let mut table = [0; 128];
+    let mut i = 0;
+    while i < (table.len() - 64) {
+        table[i] = Attacks::slow_pawn_attacks(i, 0);
+        table[i + 64] = Attacks::slow_pawn_attacks(i, 1);
+
+        i += 1
+    }
+
+    table
+};
+
+const KNIGHT_TABLES: [u64; 64] = {
+    let mut table = [0; 64];
+    let mut i = 0;
+    while i < table.len() {
+        table[i] = Attacks::slow_knight_attacks(i);
+
+        i += 1;
+    }
+
+    table
+};
+
+const KING_TABLES: [u64; 64] = {
+    let mut table = [0; 64];
+    let mut i = 0;
+    while i < table.len() {
+        table[i] = Attacks::slow_king_attacks(i);
+
+        i += 1
+    }
+
+    table
+};
