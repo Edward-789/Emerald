@@ -27,7 +27,7 @@ impl Board {
         }
     }
 
-    pub fn find_square(file : u16, rank : u16) -> usize {
+    pub fn find_square(file : usize, rank : usize) -> usize {
         (rank * 8 + file).into()
     }
 

@@ -66,6 +66,42 @@ impl Attacks {
         Self::shift_west(Self::shift_north(king)) |
         Self::shift_west(Self::shift_south(king))
     }
+
+    pub fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {
+        let rook = 1 << square;
+        let mut attacks = 0;
+
+        let mut test_square = rook;
+
+        //    if there is a blocker, stop.   if the rook has went off the board, test_square == 0.  
+        while blockers & test_square == 0 && test_square > 0 {
+            attacks |= test_square;
+            test_square = Self::shift_north(test_square);
+        } 
+
+        test_square = rook;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            attacks |= test_square;
+            test_square = Self::shift_south(test_square);
+        } 
+
+        test_square = rook;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            attacks |= test_square;
+            test_square = Self::shift_west(test_square);
+        } 
+
+        test_square = rook;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            attacks |= test_square;
+            test_square = Self::shift_east(test_square);
+        } 
+
+        attacks
+    } 
 }   
 
 const PAWN_TABLES: [u64; 128] = {
