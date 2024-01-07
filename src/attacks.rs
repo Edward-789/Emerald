@@ -75,29 +75,29 @@ impl Attacks {
 
         //    if there is a blocker, stop.   if the rook has went off the board, test_square == 0.  
         while blockers & test_square == 0 && test_square > 0 {
-            attacks |= test_square;
             test_square = Self::shift_north(test_square);
+            attacks |= test_square; 
         } 
 
         test_square = rook;
 
         while blockers & test_square == 0 && test_square > 0 {
-            attacks |= test_square;
             test_square = Self::shift_south(test_square);
+            attacks |= test_square; 
         } 
 
         test_square = rook;
 
         while blockers & test_square == 0 && test_square > 0 {
-            attacks |= test_square;
             test_square = Self::shift_west(test_square);
+            attacks |= test_square; 
         } 
 
         test_square = rook;
 
         while blockers & test_square == 0 && test_square > 0 {
-            attacks |= test_square;
             test_square = Self::shift_east(test_square);
+            attacks |= test_square; 
         } 
 
         attacks
