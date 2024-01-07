@@ -1,3 +1,7 @@
+use crate::consts::{
+    Mask
+};
+
 pub struct Attacks;
 impl Attacks {
 
@@ -11,11 +15,11 @@ impl Attacks {
     }
 
     const fn shift_east(bitboard : u64) -> u64 {
-        (bitboard << 1) & !0x0101010101010101 // A-FILE
+        (bitboard << 1) & !Mask::FILE_A_MASK
     }
 
     const fn shift_west(bitboard : u64) -> u64 {
-        (bitboard >> 1) & !0x8080808080808080 //H-FILE
+        (bitboard >> 1) & !Mask::FILE_H_MASK   
     }
 
     // LOOKUP TABLES
@@ -67,41 +71,102 @@ impl Attacks {
         Self::shift_west(Self::shift_south(king))
     }
 
-    pub fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {
+    pub const fn slow_rook_attacks(square: usize, blockers: u64, calculating_occupancy: bool) -> u64 {
         let rook = 1 << square;
         let mut attacks = 0;
-
+    
         let mut test_square = rook;
-
-        //    if there is a blocker, stop.   if the rook has went off the board, test_square == 0.  
+    
         while blockers & test_square == 0 && test_square > 0 {
             test_square = Self::shift_north(test_square);
-            attacks |= test_square; 
-        } 
-
+            attacks |= test_square;
+        }
+    
+        // mask out appropriate file/rank if calculating_occupancy
+        if calculating_occupancy {
+            attacks &= !Mask::RANK_8_MASK;
+        }
         test_square = rook;
-
+    
         while blockers & test_square == 0 && test_square > 0 {
             test_square = Self::shift_south(test_square);
-            attacks |= test_square; 
-        } 
-
+            attacks |= test_square;
+        }
+    
+        if calculating_occupancy {
+            attacks &= !Mask::RANK_1_MASK;
+        }
         test_square = rook;
-
+    
         while blockers & test_square == 0 && test_square > 0 {
             test_square = Self::shift_west(test_square);
-            attacks |= test_square; 
-        } 
-
+            attacks |= test_square;
+        }
+    
+        if calculating_occupancy {
+            attacks &= !Mask::FILE_A_MASK;
+        }
         test_square = rook;
-
+    
         while blockers & test_square == 0 && test_square > 0 {
             test_square = Self::shift_east(test_square);
+            attacks |= test_square;
+        }
+    
+        if calculating_occupancy {
+            attacks &= !Mask::FILE_H_MASK;
+        }
+    
+        attacks
+    }
+    
+    pub const fn slow_bishop_attacks(square : usize, blockers : u64, calculating_occupancy : bool) -> u64 {
+        let bishop = 1 << square;
+        let mut attacks = 0;
+
+        let mut test_square = bishop;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            test_square = Self::shift_north(Self::shift_east(test_square));
             attacks |= test_square; 
         } 
 
+        if calculating_occupancy {
+            attacks &= !(Mask::FILE_H_MASK | Mask::RANK_8_MASK);
+        }
+        test_square = bishop;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            test_square = Self::shift_south(Self::shift_east(test_square));
+            attacks |= test_square; 
+        } 
+
+        if calculating_occupancy {
+            attacks &= !(Mask::FILE_H_MASK | Mask::RANK_1_MASK);
+        }
+        test_square = bishop;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            test_square = Self::shift_north(Self::shift_west(test_square));
+            attacks |= test_square; 
+        } 
+
+        if calculating_occupancy {
+            attacks &= !(Mask::FILE_A_MASK | Mask::RANK_8_MASK);
+        }    
+        test_square = bishop;
+
+        while blockers & test_square == 0 && test_square > 0 {
+            test_square = Self::shift_south(Self::shift_west(test_square));
+            attacks |= test_square; 
+        } 
+
+        if calculating_occupancy {
+            attacks &= !(Mask::FILE_A_MASK | Mask::RANK_1_MASK);
+        }
+
         attacks
-    } 
+    }
 }   
 
 const PAWN_TABLES: [u64; 128] = {
