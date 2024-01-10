@@ -21,12 +21,3 @@ pub enum Castling {
     BlackKing = 1,
     None = 0
 }
-
-pub struct Mask;
-impl Mask {
-    pub const FILE_A_MASK: u64 = 0x0101010101010101;
-    pub const FILE_H_MASK: u64 = 0x8080808080808080;
-    
-    pub const RANK_1_MASK: u64 = 0x00000000000000FF;
-    pub const RANK_8_MASK: u64 = 0xFF00000000000000;
-}
