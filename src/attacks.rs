@@ -1,3 +1,5 @@
+use crate::{consts::Direction};
+
 pub struct Attacks;
 impl Attacks {
 
@@ -16,6 +18,30 @@ impl Attacks {
 
     const fn shift_west(bitboard : u64) -> u64 {
         (bitboard >> 1) & !0x8080808080808080 //H-FILE
+    }
+
+    const fn shift_direction(bitboard : u64, direction : &Direction) -> u64 {
+        match direction {
+            Direction::North => Self::shift_north(bitboard),
+            Direction::NorthEast => Self::shift_north(Self::shift_east(bitboard)),
+            Direction::East => Self::shift_east(bitboard),
+            Direction::SouthEast => Self::shift_south(Self::shift_east(bitboard)),
+            Direction::South => Self::shift_south(bitboard),
+            Direction::SouthWest => Self::shift_south(Self::shift_west(bitboard)),
+            Direction::West => Self::shift_west(bitboard),
+            Direction::NorthWest => Self::shift_north(Self::shift_west(bitboard)),
+        }
+    }
+
+    const fn get_ray(square : usize, blockers : u64, direction : &Direction) -> u64 {
+        let mut test_square = 1 << square;
+        let mut attacks = 0;
+        while blockers & test_square == 0 && test_square > 0 {
+            test_square = Self::shift_direction(test_square, direction);
+            attacks |= test_square; 
+        } 
+
+        attacks
     }
 
     // LOOKUP TABLES
@@ -67,40 +93,18 @@ impl Attacks {
         Self::shift_west(Self::shift_south(king))
     }
 
-    pub fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {
-        let rook = 1 << square;
-        let mut attacks = 0;
+    pub fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {        
+        Self::get_ray(square, blockers, &Direction::North) | 
+        Self::get_ray(square, blockers, &Direction::South) | 
+        Self::get_ray(square, blockers, &Direction::East) | 
+        Self::get_ray(square, blockers, &Direction::West)
+    } 
 
-        let mut test_square = rook;
-
-        //    if there is a blocker, stop.   if the rook has went off the board, test_square == 0.  
-        while blockers & test_square == 0 && test_square > 0 {
-            test_square = Self::shift_north(test_square);
-            attacks |= test_square; 
-        } 
-
-        test_square = rook;
-
-        while blockers & test_square == 0 && test_square > 0 {
-            test_square = Self::shift_south(test_square);
-            attacks |= test_square; 
-        } 
-
-        test_square = rook;
-
-        while blockers & test_square == 0 && test_square > 0 {
-            test_square = Self::shift_west(test_square);
-            attacks |= test_square; 
-        } 
-
-        test_square = rook;
-
-        while blockers & test_square == 0 && test_square > 0 {
-            test_square = Self::shift_east(test_square);
-            attacks |= test_square; 
-        } 
-
-        attacks
+    pub fn slow_bishop_attacks(square : usize, blockers : u64) -> u64 {        
+        Self::get_ray(square, blockers, &Direction::NorthEast) | 
+        Self::get_ray(square, blockers, &Direction::SouthEast) | 
+        Self::get_ray(square, blockers, &Direction::SouthWest) | 
+        Self::get_ray(square, blockers, &Direction::NorthWest)
     } 
 }   
 

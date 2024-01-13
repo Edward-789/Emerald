@@ -21,3 +21,14 @@ pub enum Castling {
     BlackKing = 1,
     None = 0
 }
+
+pub enum Direction {
+    North,
+    South,
+    East,
+    West,
+    NorthEast,
+    NorthWest,
+    SouthEast,
+    SouthWest,
+}
