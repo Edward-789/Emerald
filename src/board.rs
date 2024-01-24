@@ -5,10 +5,10 @@ use crate::consts::{
 };
 
 pub struct Board {
-    bitboards: [u64; 8],
-    whites_move: bool,
-    castle_rights: u8,
-    en_passant_sq: u8,
+    pub bitboards: [u64; 8],
+    pub whites_move: bool,
+    pub castle_rights: u8,
+    pub en_passant_sq: u8,
 }
 
 impl Board {
@@ -71,10 +71,10 @@ impl Board {
 
         for symbol in castle_symbols {
             board.castle_rights +=
-                if symbol == 'K' { Castling::WhiteKing } else
-                if symbol == 'Q' { Castling::WhiteQueen } else
-                if symbol == 'k' { Castling::BlackKing } else
-                if symbol == 'q' { Castling::BlackQueen } else {Castling::None} as u8
+                if symbol == 'K' { Castling::WHITE_KING } else
+                if symbol == 'Q' { Castling::WHITE_QUEEN } else
+                if symbol == 'k' { Castling::BLACK_KING } else
+                if symbol == 'q' { Castling::BLACK_QUEEN } else {0}
                                 
         }
 

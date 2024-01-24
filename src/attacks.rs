@@ -1,4 +1,13 @@
-use crate::{consts::Direction};
+use crate::{
+    consts::{
+        Direction,
+        Masks,
+    },
+    magics::{
+        ROOK_MAGICS,
+        BISHOP_MAGICS
+    } 
+};
 
 pub struct Attacks;
 impl Attacks {
@@ -13,11 +22,11 @@ impl Attacks {
     }
 
     const fn shift_east(bitboard : u64) -> u64 {
-        (bitboard << 1) & !0x0101010101010101 // A-FILE
+        (bitboard << 1) & !Masks::FILE_A
     }
 
     const fn shift_west(bitboard : u64) -> u64 {
-        (bitboard >> 1) & !0x8080808080808080 //H-FILE
+        (bitboard >> 1) & !Masks::FILE_H
     }
 
     const fn shift_direction(bitboard : u64, direction : &Direction) -> u64 {
@@ -33,7 +42,7 @@ impl Attacks {
         }
     }
 
-    const fn get_ray(square : usize, blockers : u64, direction : &Direction) -> u64 {
+    pub const fn get_ray(square : usize, blockers : u64, direction : &Direction) -> u64 {
         let mut test_square = 1 << square;
         let mut attacks = 0;
         while blockers & test_square == 0 && test_square > 0 {
@@ -43,18 +52,36 @@ impl Attacks {
 
         attacks
     }
-
+    
     // LOOKUP TABLES
     pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
-        PAWN_TABLES[square + (64 * colour_num)]
+        PAWN_TABLE[square + (64 * colour_num)]
     }
 
     pub fn knight_attacks(square : usize) -> u64 {
-        KNIGHT_TABLES[square]
+        KNIGHT_TABLE[square]
     }
 
     pub fn king_attacks(square : usize) -> u64 {
-        KING_TABLES[square]
+        KING_TABLE[square]
+    }
+    
+    pub fn bishop_attacks(square : usize, blockers : u64) -> u64 {
+        let magic = unsafe { BISHOP_MAGICS.get_unchecked(square) };
+
+        let blockers_filtered = blockers & magic.mask;
+        let index = (magic.factor.wrapping_mul(blockers_filtered) >> 55) as usize + magic.offset;
+    
+        unsafe { *SLIDER_ATTACKS.get_unchecked(index) }
+    }
+
+    pub fn rook_attacks(square : usize, blockers : u64) -> u64 {
+        let magic = unsafe { ROOK_MAGICS.get_unchecked(square) };
+
+        let blockers_filtered = blockers & magic.mask;
+        let index = (magic.factor.wrapping_mul(blockers_filtered) >> 52) as usize + magic.offset;
+    
+        unsafe { *SLIDER_ATTACKS.get_unchecked(index) }
     }
 
     // ATTACK FUNCTIONS
@@ -93,22 +120,22 @@ impl Attacks {
         Self::shift_west(Self::shift_south(king))
     }
 
-    pub fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {        
+    const fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {        
         Self::get_ray(square, blockers, &Direction::North) | 
-        Self::get_ray(square, blockers, &Direction::South) | 
         Self::get_ray(square, blockers, &Direction::East) | 
-        Self::get_ray(square, blockers, &Direction::West)
+        Self::get_ray(square, blockers, &Direction::West) | 
+        Self::get_ray(square, blockers, &Direction::South)
     } 
 
-    pub fn slow_bishop_attacks(square : usize, blockers : u64) -> u64 {        
+    const fn slow_bishop_attacks(square : usize, blockers : u64) -> u64 {        
         Self::get_ray(square, blockers, &Direction::NorthEast) | 
         Self::get_ray(square, blockers, &Direction::SouthEast) | 
         Self::get_ray(square, blockers, &Direction::SouthWest) | 
         Self::get_ray(square, blockers, &Direction::NorthWest)
     } 
-}   
+}       
 
-const PAWN_TABLES: [u64; 128] = {
+const PAWN_TABLE: [u64; 128] = {
     let mut table = [0; 128];
     let mut i = 0;
     while i < (table.len() - 64) {
@@ -121,7 +148,7 @@ const PAWN_TABLES: [u64; 128] = {
     table
 };
 
-const KNIGHT_TABLES: [u64; 64] = {
+const KNIGHT_TABLE: [u64; 64] = {
     let mut table = [0; 64];
     let mut i = 0;
     while i < table.len() {
@@ -133,13 +160,51 @@ const KNIGHT_TABLES: [u64; 64] = {
     table
 };
 
-const KING_TABLES: [u64; 64] = {
+const KING_TABLE: [u64; 64] = {
     let mut table = [0; 64];
     let mut i = 0;
     while i < table.len() {
         table[i] = Attacks::slow_king_attacks(i);
 
         i += 1
+    }
+
+    table
+};
+
+//magic stuff
+#[allow(long_running_const_eval)]
+
+static SLIDER_ATTACKS : [u64; 88772] = {
+    let mut table = [0; 88772];
+    let mut square = 0;
+    while square < 64 {
+        let magic = &BISHOP_MAGICS[square as usize];
+        let mask = magic.mask;
+        let mut blockers = 0;
+        loop {
+            let moves = Attacks::slow_bishop_attacks(square, blockers);
+            let index = (magic.factor.wrapping_mul(blockers) >> 55) as usize + magic.offset;
+            table[index] = moves;
+            blockers = blockers.wrapping_sub(mask) & mask;
+            if blockers == 0 {
+                break;
+            }
+        }
+
+        let magic = &ROOK_MAGICS[square as usize];
+        let mask = magic.mask;
+        let mut blockers = 0;
+        loop {
+            let moves = Attacks::slow_rook_attacks(square, blockers);
+            let index = (magic.factor.wrapping_mul(blockers) >> 52) as usize + magic.offset;
+            table[index] = moves;
+            blockers = blockers.wrapping_sub(mask) & mask;
+            if blockers == 0 {
+                break;
+            }
+        }
+        square += 1;
     }
 
     table

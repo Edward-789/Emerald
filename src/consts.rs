@@ -4,6 +4,7 @@ pub enum Colour {
     Black = 1,
 }
 
+#[derive(PartialEq)]
 pub enum Pieces {
     None = 0,
     Pawn = 2,
@@ -14,12 +15,12 @@ pub enum Pieces {
     King = 7,
 }
 
-pub enum Castling {
-    WhiteQueen = 8,
-    WhiteKing = 4,
-    BlackQueen = 2,
-    BlackKing = 1,
-    None = 0
+pub struct Castling;
+impl Castling {
+    pub const WHITE_QUEEN: u8 = 8;
+    pub const WHITE_KING: u8 = 4;
+    pub const BLACK_QUEEN: u8 = 2;
+    pub const BLACK_KING: u8 = 1;
 }
 
 pub enum Direction {
@@ -31,4 +32,12 @@ pub enum Direction {
     NorthWest,
     SouthEast,
     SouthWest,
+}
+
+pub struct Masks;
+impl Masks {
+    pub const FILE_A: u64 = 0x0101010101010101;
+    pub const FILE_H: u64 = 0x8080808080808080;
+    pub const RANK_1: u64 = 0x00000000000000FF;
+    pub const RANK_8: u64 = 0xFF00000000000000;
 }
