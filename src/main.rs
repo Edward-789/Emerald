@@ -1,28 +1,17 @@
 mod board;
-mod consts;
+mod utils;
 mod attacks;
 mod magics;
+mod moves;
+mod perft;
 
 use crate::{
     board::Board,
-    attacks::Attacks,
+    perft::perft
 };
 
 fn main() {
-    println!("ROOKS");
-    println!();
-    Board::print_bitboard(Attacks::rook_attacks(Board::find_square(2, 0), (1 << Board::find_square(5, 0)) | (1 << Board::find_square(2, 4))));    println!();
-    println!();    
-    println!("BLOCKERS");
-    println!();
-    Board::print_bitboard((1 << Board::find_square(5, 0)) | (1 << Board::find_square(2, 4)));
-    println!();
-    println!("BISHOPS");
-    println!();
-    Board::print_bitboard(Attacks::bishop_attacks(Board::find_square(2, 0), (1 << Board::find_square(1, 1)) | (1 << Board::find_square(6, 4))));
-    println!();
-    println!("BLOCKERS");
-    println!();
-    Board::print_bitboard(1 << Board::find_square(1, 1) | (1 << Board::find_square(6, 4)));
-    println!();
+    let board = Board::read_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
+    perft::<true>(&board, 3);
 }

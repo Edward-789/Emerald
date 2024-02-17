@@ -1,11 +1,8 @@
 use crate::{
-    consts::{
-        Direction,
-        Masks,
-    },
     magics::{
-        ROOK_MAGICS,
-        BISHOP_MAGICS
+        BISHOP_MAGICS, ROOK_MAGICS
+    }, utils::{
+        Colour, Direction, Masks, Pieces
     } 
 };
 
@@ -54,8 +51,8 @@ impl Attacks {
     }
     
     // LOOKUP TABLES
-    pub fn pawn_attacks(square : usize, colour_num : usize) -> u64 {
-        PAWN_TABLE[square + (64 * colour_num)]
+    pub fn pawn_attacks(square : usize, colour : Colour) -> u64 {
+        PAWN_TABLE[square + (64 * (colour as usize))]
     }
 
     pub fn knight_attacks(square : usize) -> u64 {
@@ -84,6 +81,21 @@ impl Attacks {
         unsafe { *SLIDER_ATTACKS.get_unchecked(index) }
     }
 
+    pub fn queen_attacks(square : usize, blockers : u64) -> u64 {
+        Self::rook_attacks(square, blockers) | Self::bishop_attacks(square, blockers)
+    }
+
+    
+    pub fn get_piece_attacks(square : usize, blockers : u64 , piece: Pieces) -> u64 {
+        match piece {
+            Pieces::Rook => Attacks::rook_attacks(square, blockers),
+            Pieces::Bishop => Attacks::bishop_attacks(square, blockers),
+            Pieces::King => Attacks::king_attacks(square),
+            Pieces::Knight => Attacks::knight_attacks(square),
+            Pieces::Queen => Attacks::queen_attacks(square, blockers),
+            _ => 0
+        }
+    }
     // ATTACK FUNCTIONS
     const fn slow_pawn_attacks(square : usize, colour_num : usize) -> u64 {
         assert!(colour_num == 1 || colour_num == 0);
@@ -119,7 +131,7 @@ impl Attacks {
         Self::shift_west(Self::shift_north(king)) |
         Self::shift_west(Self::shift_south(king))
     }
-
+    
     const fn slow_rook_attacks(square : usize, blockers : u64) -> u64 {        
         Self::get_ray(square, blockers, &Direction::North) | 
         Self::get_ray(square, blockers, &Direction::East) | 
@@ -163,7 +175,7 @@ const KNIGHT_TABLE: [u64; 64] = {
 const KING_TABLE: [u64; 64] = {
     let mut table = [0; 64];
     let mut i = 0;
-    while i < table.len() {
+    while i < table.len() { 
         table[i] = Attacks::slow_king_attacks(i);
 
         i += 1
