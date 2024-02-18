@@ -1,7 +1,7 @@
 use crate::{
     moves::{Move, MoveList},
     utils::{
-        pop_lsb, Castling, Colour, Pieces
+        pop_lsb, Castling, Colour, Pieces, 
     },
     attacks::Attacks
 };
@@ -41,6 +41,10 @@ impl Board {
         let i = 1 << square;
         self.bitboards[colour] |= i;
         self.bitboards[piece] |= i;
+
+        if piece == Pieces::King as usize {
+            self.king_squares[colour] = square;
+        }
     }
 
     fn remove_piece(&mut self, square: usize) {
@@ -78,19 +82,24 @@ impl Board {
     }
 
     fn in_check(&self) -> bool {
-        self.square_is_attacked(self.king_squares[self.colour_to_move as usize], self.colour_to_move)
+        self.square_is_attacked(self.king_squares[self.colour_to_move as usize], self.colour_to_move, self.bitboards[0] | self.bitboards[1])
     }
 
-    fn square_is_attacked(&self, square : usize, stm : Colour) -> bool{
-        let enemy = Self::reverse_colour(stm);
-        let occupied = self.bitboards[0] | self.bitboards[1];
-        let queen = self.get_piece_colour_bitboard(Pieces::Queen, enemy);
+    fn square_is_attacked(&self, square : usize, stm : Colour, blockers : u64) -> bool{
+        let enemy = Self::reverse_colour(stm) as usize;
 
-        Attacks::rook_attacks(square, occupied) & (self.get_piece_colour_bitboard(Pieces::Rook, enemy)| queen) |
-        Attacks::bishop_attacks(square, occupied) & ( self.get_piece_colour_bitboard(Pieces::Bishop, enemy) | queen) |
-        Attacks::knight_attacks(square) & self.get_piece_colour_bitboard(Pieces::Knight, enemy) | 
-        Attacks::pawn_attacks(square, enemy) & self.get_piece_colour_bitboard(Pieces::Pawn, enemy) |
-        Attacks::king_attacks(square) & self.get_piece_colour_bitboard(Pieces::King, enemy)  > 0
+        ((Attacks::king_attacks(square) & self.bitboards[Pieces::King as usize]) |
+        (Attacks::knight_attacks(square) & self.bitboards[Pieces::Knight as usize]) |
+        (Attacks::pawn_attacks(square, stm) & self.bitboards[Pieces::Pawn as usize]) |
+        (Attacks::rook_attacks(square, blockers) & (self.bitboards[Pieces::Rook as usize] | self.bitboards[Pieces::Queen as usize])) |
+        (Attacks::bishop_attacks(square, blockers) & (self.bitboards[Pieces::Bishop as usize] | self.bitboards[Pieces::Queen as usize]))) 
+        & self.bitboards[enemy] > 0
+    }
+
+    fn handle_promotions(&self, list : &mut MoveList, from : usize, to : usize) {
+        for flag in Move::KNIGHT_PROMO..=Move::QUEEEN_PROMO {
+            list.push(from, to, flag);
+        }
     }
 
     fn blank() -> Self {
@@ -139,8 +148,6 @@ impl Board {
                     if symbol == 'q' || symbol == 'Q' { Pieces::Queen } else
                     if symbol == 'k' || symbol == 'K' { Pieces::King } else { panic!("invalid FEN"); } as usize;
 
-                if symbol == 'k' { board.king_squares[0] = square} else
-                if symbol == 'K' { board.king_squares[1] = square}
                 board.set_piece(square, colour, piece);
 
                 file += 1;
@@ -194,25 +201,35 @@ impl Board {
         // }
 
         let mut our_pawns = self.get_piece_colour_bitboard(Pieces::Pawn, self.colour_to_move);
-
         while our_pawns > 0 {
 
-            let from_square = pop_lsb(&mut our_pawns);               // pawns only attack squares an enemy piece is located on, so and with enemy pieces
+            let from_square = pop_lsb(&mut our_pawns);     
+            let rank = Self::find_rank(from_square);          // pawns only attack squares an enemy piece is located on, so and with enemy pieces
             let mut attacks = Attacks::pawn_attacks(from_square, self.colour_to_move) & opposite;
+            let about_to_promote = rank == 1 && !is_white || rank == 6 && is_white;
+            let on_starting_square = rank != 1 && is_white || rank != 6 && !is_white;
 
             while attacks > 0 {
                 let attack_square = pop_lsb(&mut attacks);
-                list.push(from_square, attack_square, Move::NO_FLAG);;
+                if about_to_promote {
+                    self.handle_promotions(&mut list, from_square, attack_square);
+                } else  {
+                    list.push(from_square, attack_square, Move::NO_FLAG);
+                }
             }
 
             let push_square = if is_white {from_square + 8} else {from_square - 8};
             if self.square_is_occupied(push_square) {
                 continue;
             }
-            list.push(from_square, push_square, Move::NO_FLAG);;
 
-            let rank = Self::find_rank(from_square);
-            if rank != 1 && is_white || rank != 6 && !is_white {
+            if about_to_promote {
+                self.handle_promotions(&mut list, from_square, push_square);
+            } else {
+                list.push(from_square, push_square, Move::NO_FLAG);
+            }
+
+            if on_starting_square {
                 continue;
             }
 
@@ -225,6 +242,8 @@ impl Board {
             list.push(from_square, double_push_square, Move::DOUBLE_PAWN_PUSH);
 
         }    
+
+
 
         for i in 2..=7 {
             let piece = Pieces::convert_num_to_piece(i);
@@ -248,20 +267,35 @@ impl Board {
     pub fn apply(&mut self, mov : Move) -> bool {
         let from_square = mov.from_square();
         let to_square = mov.to_square();
-        let side = self.colour_to_move;
+        let orig_colour = self.colour_to_move;
+        let flag = mov.flag();
 
         self.remove_piece(to_square);
         self.set_piece(to_square, self.colour_to_move as usize, self.find_piece_type(from_square).unwrap() as usize);
         // change ksqs
         if self.find_piece_type(from_square).unwrap() == Pieces::King {
-            self.king_squares[side as usize] = to_square;
+            self.king_squares[self.colour_to_move as usize] = to_square;
+        }
+        // check for flag stuff
+
+        if flag == Move::DOUBLE_PAWN_PUSH {
+            self.en_passant_sq = Some((
+                if self.colour_to_move == Colour::White {to_square - 8} else {to_square + 8}) as u8)
+        } else {
+            self.en_passant_sq = None;
+        }
+
+        if flag == Move::EN_PASSANT {
+            self.remove_piece(if self.colour_to_move == Colour::White {to_square - 8} else {to_square + 8})
+        } else if flag >= Move::KNIGHT_PROMO {
+            self.set_piece(to_square, self.colour_to_move as usize, Move::flag_to_piece(flag).unwrap() as usize);
         }
 
         self.remove_piece(from_square);
         self.colour_to_move = self.enemy_colour();
         
         // check legal move
-        !self.square_is_attacked(self.king_squares[side as usize], self.colour_to_move)
+        !self.square_is_attacked(self.king_squares[orig_colour as usize], orig_colour, self.bitboards[0] | self.bitboards[1])
     }
 
      // debug stuff

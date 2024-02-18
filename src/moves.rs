@@ -1,4 +1,4 @@
-use crate::utils::SQUARE_TO_STR;
+use crate::utils::{Pieces, SQUARE_TO_STR};
 
 #[derive(Copy, Clone)]
 pub struct Move {
@@ -24,19 +24,34 @@ impl Move {
         format!("{}{}", SQUARE_TO_STR[self.from_square()], SQUARE_TO_STR[self.to_square()])
     }
 
+    pub fn flag_to_piece(flag : u16) -> Option<Pieces> {
+        let mut piece = None;
+
+        if flag >= Self::KNIGHT_PROMO {
+            piece = match flag {
+                Self::KNIGHT_PROMO => Some(Pieces::Knight),
+                Self::BISHOP_PROMO => Some(Pieces::Bishop),
+                Self::ROOK_PROMO => Some(Pieces::Rook),
+                Self::QUEEEN_PROMO => Some(Pieces::Queen),
+                _ => None
+            }
+        } 
+
+        piece  
+    }
+    
     pub const NO_FLAG: u16 = 0b0000;
     pub const WHITE_KINGSIDE: u16 = 0b0001;
     pub const WHITE_QUEENSIDE: u16 = 0b0010;
     pub const BLACK_KINGSIDE: u16 = 0b0011;
     pub const BLACK_QUEENSIDE: u16 = 0b0100;
-    pub const KNIGHT_PROMO: u16 = 0b0101;
-    pub const BISHOP_PROMO: u16 = 0b0110;
-    pub const ROOK_PROMO: u16 = 0b0111;
-    pub const QUEEEN_PROMO: u16 = 0b1000;
-    pub const EN_PASSANT: u16 = 0b1001;
-    pub const DOUBLE_PAWN_PUSH: u16 = 0b1010;
-
-
+    pub const EN_PASSANT: u16 = 0b0101;
+    pub const DOUBLE_PAWN_PUSH: u16 = 0b0110;
+    pub const KNIGHT_PROMO: u16 = 0b0111;
+    pub const BISHOP_PROMO: u16 = 0b1000;
+    pub const ROOK_PROMO: u16 = 0b1001;
+    pub const QUEEEN_PROMO: u16 = 0b1011;
+    
 }
 
 pub struct MoveList {
