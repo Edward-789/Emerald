@@ -24,8 +24,8 @@ impl Move {
         format!("{}{}", SQUARE_TO_STR[self.from_square()], SQUARE_TO_STR[self.to_square()])
     }
 
-    pub fn flag_to_piece(flag : u16) -> Option<Pieces> {
-        match flag {
+    pub fn promo_piece(&self) -> Option<Pieces> {
+        match self.flag() {
             Self::KNIGHT_PROMO => Some(Pieces::Knight),
             Self::BISHOP_PROMO => Some(Pieces::Bishop),
             Self::ROOK_PROMO => Some(Pieces::Rook),
@@ -33,6 +33,9 @@ impl Move {
             _ => None
         }
     }
+
+    pub const ROOK_FROM_CASTLING: [usize; 4] = [0, 7, 56, 63];
+    pub const ROOK_TO_CASTLING: [usize; 4] = [3, 5, 59, 61];
     
     pub const NO_FLAG: u16 = 0b0000;
     pub const WHITE_KINGSIDE: u16 = 0b0001;

@@ -293,27 +293,39 @@ impl Board {
         let from_square = mov.from_square();
         let to_square = mov.to_square();
         let orig_colour = self.colour_to_move;
-        let flag = mov.flag();
+        let is_white = self.colour_to_move == Colour::White;
+        let moving_piece = self.piece_type(from_square).unwrap();
 
+        self.en_passant_sq = None;
         self.remove_piece(to_square);
         self.set_piece(to_square, self.colour_to_move as usize, self.piece_type(from_square).unwrap() as usize);
         // change ksqs
-        if self.piece_type(from_square).unwrap() == Pieces::King {
+        if moving_piece == Pieces::King {
             self.king_squares[self.colour_to_move as usize] = to_square;
+            
+            // update castle rights
+            self.castle_rights &= !(if is_white { Castling::WHITE_QUEEN | Castling::WHITE_KING } else {Castling::BLACK_QUEEN | Castling::BLACK_KING})
+        } else if moving_piece == Pieces::Rook {
+            match from_square {
+                0 => self.castle_rights &= !Castling::WHITE_KING,
+                7 => self.castle_rights &= !Castling::WHITE_QUEEN,
+                56 => self.castle_rights &= !Castling::BLACK_KING,
+                63 => self.castle_rights &= !Castling::BLACK_QUEEN,
+                _ => {}
+            }
         }
+
+        
         // check for flag stuff
-
-        if flag == Move::DOUBLE_PAWN_PUSH {
-            self.en_passant_sq = Some((
-                if self.colour_to_move == Colour::White {to_square - 8} else {to_square + 8}) as u8)
-        } else {
-            self.en_passant_sq = None;
-        }
-
-        if flag == Move::EN_PASSANT {
-            self.remove_piece(if self.colour_to_move == Colour::White {to_square - 8} else {to_square + 8})
-        } else if flag >= Move::KNIGHT_PROMO {
-            self.set_piece(to_square, self.colour_to_move as usize, Move::flag_to_piece(flag).unwrap() as usize);
+        match mov.flag() {
+            flag if flag > Move::KNIGHT_PROMO => self.set_piece(to_square, self.colour_to_move as usize, mov.promo_piece().unwrap() as usize),
+            Move::EN_PASSANT => self.remove_piece(if is_white {to_square - 8} else {to_square + 8}),
+            Move::DOUBLE_PAWN_PUSH => self.en_passant_sq = Some(if is_white {to_square - 8} else {to_square + 8} as u8),
+            flag if flag >= Move::WHITE_KINGSIDE && flag <= Move::BLACK_QUEENSIDE => {
+                self.remove_piece(Move::ROOK_FROM_CASTLING[(flag - 1) as usize]);
+                self.set_piece(Move::ROOK_TO_CASTLING[(flag - 1) as usize], self.colour_to_move as usize, Pieces::Rook as usize)
+            },
+            _=> {}
         }
 
         self.remove_piece(from_square);
