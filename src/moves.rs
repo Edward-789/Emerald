@@ -25,19 +25,13 @@ impl Move {
     }
 
     pub fn flag_to_piece(flag : u16) -> Option<Pieces> {
-        let mut piece = None;
-
-        if flag >= Self::KNIGHT_PROMO {
-            piece = match flag {
-                Self::KNIGHT_PROMO => Some(Pieces::Knight),
-                Self::BISHOP_PROMO => Some(Pieces::Bishop),
-                Self::ROOK_PROMO => Some(Pieces::Rook),
-                Self::QUEEEN_PROMO => Some(Pieces::Queen),
-                _ => None
-            }
-        } 
-
-        piece  
+        match flag {
+            Self::KNIGHT_PROMO => Some(Pieces::Knight),
+            Self::BISHOP_PROMO => Some(Pieces::Bishop),
+            Self::ROOK_PROMO => Some(Pieces::Rook),
+            Self::QUEEEN_PROMO => Some(Pieces::Queen),
+            _ => None
+        }
     }
     
     pub const NO_FLAG: u16 = 0b0000;

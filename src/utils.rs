@@ -33,6 +33,7 @@ impl Castling {
     pub const WHITE_KING: u8 = 4;
     pub const BLACK_QUEEN: u8 = 2;
     pub const BLACK_KING: u8 = 1;
+    pub const CASTLE_RIGHT_MASKS: [u8; 2] = [0b1100, 0b0011];
 }
 
 

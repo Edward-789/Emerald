@@ -11,7 +11,7 @@ use crate::{
 };
 
 fn main() {
-    let board = Board::read_fen("rnbqkbnr/pppp1ppp/4p3/8/8/BP6/P1PPPPPP/RN1QKBNR b KQkq - 1 2");
+    let board = Board::read_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-    perft::<true>(&board, 1);
+    perft::<true>(&board, 4);
 }
