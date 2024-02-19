@@ -82,7 +82,7 @@ impl Board {
     }
 
     fn in_check(&self) -> bool {
-        !self.square_is_attacked(self.king_squares[self.colour_to_move as usize], self.colour_to_move, self.bitboards[0] | self.bitboards[1])
+        self.square_is_attacked(self.king_squares[self.colour_to_move as usize], self.colour_to_move, self.bitboards[0] | self.bitboards[1])
     }
 
     fn square_is_attacked(&self, square : usize, stm : Colour, blockers : u64) -> bool{
@@ -200,27 +200,28 @@ impl Board {
                 list.push(from_square, self.en_passant_sq.unwrap() as usize, Move::EN_PASSANT);
             }
         }
-
         // castling
 
-        if self.castle_rights & Castling::CASTLE_RIGHT_MASKS[self.colour_to_move as usize] > 0 && !self.in_check() {
-            if self.castle_rights & (Castling::WHITE_KING | Castling::BLACK_KING) > 0 &&
-                self.piece_type(king_square + 1) == None &&
-                self.piece_type(king_square + 2) == None &&
-                !self.square_is_attacked(king_square + 1, enemy_colour, all_pieces) &&
-                !self.square_is_attacked(king_square + 2, enemy_colour, all_pieces) {
+        if self.castle_rights & Castling::CASTLE_FLAG_MASKS[self.colour_to_move as usize] > 0 && !self.in_check(){
+            if ((self.castle_rights & Castling::WHITE_KING > 0 && self.colour_to_move == Colour::White) || 
+                (self.castle_rights & Castling::BLACK_KING > 0 && self.colour_to_move == Colour::Black)) &&
+                !self.square_is_occupied(king_square + 1) &&
+                !self.square_is_occupied(king_square + 2) &&
+                !self.square_is_attacked(king_square + 1, self.colour_to_move, all_pieces) &&
+                !self.square_is_attacked(king_square + 2, self.colour_to_move, all_pieces) {
                     list.push(king_square, king_square + 2, 
-                        if self.colour_to_move == Colour::White {Move::WHITE_KINGSIDE} else {Move::BLACK_KINGSIDE})
+                        if self.colour_to_move == Colour::White {Move::WHITE_KINGSIDE} else {Move::BLACK_KINGSIDE});
                 }
 
-            if self.castle_rights & (Castling::WHITE_QUEEN | Castling::BLACK_QUEEN) > 0 &&
-                self.piece_type(king_square - 1) == None &&
-                self.piece_type(king_square - 2) == None &&
-                self.piece_type(king_square - 3) == None &&
-                !self.square_is_attacked(king_square - 1, enemy_colour, all_pieces) &&
-                !self.square_is_attacked(king_square - 2, enemy_colour, all_pieces) {
+            if ((self.castle_rights & Castling::WHITE_QUEEN > 0 && self.colour_to_move == Colour::White) || 
+                (self.castle_rights & Castling::BLACK_QUEEN > 0 && self.colour_to_move == Colour::Black)) &&
+                !self.square_is_occupied(king_square - 1) &&
+                !self.square_is_occupied(king_square - 2) &&
+                !self.square_is_occupied(king_square - 3) &&
+                !self.square_is_attacked(king_square - 1, self.colour_to_move, all_pieces) &&
+                !self.square_is_attacked(king_square - 2, self.colour_to_move, all_pieces) {
                     list.push(king_square, king_square - 2, 
-                        if self.colour_to_move == Colour::White {Move::WHITE_QUEENSIDE} else {Move::BLACK_QUEENSIDE})
+                        if self.colour_to_move == Colour::White {Move::WHITE_QUEENSIDE} else {Move::BLACK_QUEENSIDE});
                 }
 
         }
@@ -268,8 +269,6 @@ impl Board {
 
         }    
 
-
-
         for i in 2..=7 {
             let piece = Pieces::convert_num_to_piece(i);
             let mut our_pieces = self.get_piece_colour_bitboard(piece, self.colour_to_move);
@@ -294,31 +293,23 @@ impl Board {
         let to_square = mov.to_square();
         let orig_colour = self.colour_to_move;
         let is_white = self.colour_to_move == Colour::White;
-        let moving_piece = self.piece_type(from_square).unwrap();
 
         self.en_passant_sq = None;
         self.remove_piece(to_square);
         self.set_piece(to_square, self.colour_to_move as usize, self.piece_type(from_square).unwrap() as usize);
         // change ksqs
-        if moving_piece == Pieces::King {
+        if self.piece_type(from_square).unwrap() == Pieces::King {
             self.king_squares[self.colour_to_move as usize] = to_square;
-            
-            // update castle rights
-            self.castle_rights &= !(if is_white { Castling::WHITE_QUEEN | Castling::WHITE_KING } else {Castling::BLACK_QUEEN | Castling::BLACK_KING})
-        } else if moving_piece == Pieces::Rook {
-            match from_square {
-                0 => self.castle_rights &= !Castling::WHITE_KING,
-                7 => self.castle_rights &= !Castling::WHITE_QUEEN,
-                56 => self.castle_rights &= !Castling::BLACK_KING,
-                63 => self.castle_rights &= !Castling::BLACK_QUEEN,
-                _ => {}
-            }
-        }
+        };
+
+        //update castle rights
+        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[from_square];
+        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[to_square];
 
         
         // check for flag stuff
         match mov.flag() {
-            flag if flag > Move::KNIGHT_PROMO => self.set_piece(to_square, self.colour_to_move as usize, mov.promo_piece().unwrap() as usize),
+            flag if flag >= Move::KNIGHT_PROMO => self.set_piece(to_square, self.colour_to_move as usize, mov.promo_piece().unwrap() as usize),
             Move::EN_PASSANT => self.remove_piece(if is_white {to_square - 8} else {to_square + 8}),
             Move::DOUBLE_PAWN_PUSH => self.en_passant_sq = Some(if is_white {to_square - 8} else {to_square + 8} as u8),
             flag if flag >= Move::WHITE_KINGSIDE && flag <= Move::BLACK_QUEENSIDE => {

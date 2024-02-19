@@ -47,7 +47,7 @@ impl Move {
     pub const KNIGHT_PROMO: u16 = 0b0111;
     pub const BISHOP_PROMO: u16 = 0b1000;
     pub const ROOK_PROMO: u16 = 0b1001;
-    pub const QUEEEN_PROMO: u16 = 0b1011;
+    pub const QUEEEN_PROMO: u16 = 0b1010;
     
 }
 
