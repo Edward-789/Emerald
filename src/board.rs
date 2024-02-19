@@ -301,11 +301,6 @@ impl Board {
         if self.piece_type(from_square).unwrap() == Pieces::King {
             self.king_squares[self.colour_to_move as usize] = to_square;
         };
-
-        //update castle rights
-        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[from_square];
-        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[to_square];
-
         
         // check for flag stuff
         match mov.flag() {
@@ -318,6 +313,10 @@ impl Board {
             },
             _=> {}
         }
+        
+        //update castle rights
+        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[from_square];
+        self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[to_square];
 
         self.remove_piece(from_square);
         self.colour_to_move = self.enemy_colour();
