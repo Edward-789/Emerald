@@ -24,6 +24,9 @@ impl Move {
         format!("{}{}", SQUARE_TO_STR[self.from_square()], SQUARE_TO_STR[self.to_square()])
     }
 
+    pub fn new(from: usize, to: usize, flag: u16) -> Self {
+        Self {move_value :  from as u16 | (to as u16) << 6 | flag << 12}
+    }
     pub fn promo_piece(&self) -> Option<Pieces> {
         match self.flag() {
             Self::KNIGHT_PROMO => Some(Pieces::Knight),
@@ -35,7 +38,7 @@ impl Move {
     }
 
     pub const ROOK_FROM_CASTLING: [usize; 4] = [0, 7, 56, 63];
-    pub const ROOK_TO_CASTLING: [usize; 4] = [3, 5, 59, 61];
+    pub const ROOK_TO_CASTLING: [usize; 4] = [5, 3, 61, 59];
     
     pub const NO_FLAG: u16 = 0b0000;
     pub const WHITE_KINGSIDE: u16 = 0b0001;
