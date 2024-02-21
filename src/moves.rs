@@ -21,9 +21,18 @@ impl Move {
     }
 
     pub fn to_uci(&self) -> String {
-        format!("{}{}", SQUARE_TO_STR[self.from_square()], SQUARE_TO_STR[self.to_square()])
+        format!("{}{}{}", SQUARE_TO_STR[self.from_square()], SQUARE_TO_STR[self.to_square()], self.flag_to_uci_char())
     }
 
+    pub fn flag_to_uci_char(&self) -> &str {
+        match self.flag() {
+            Self::KNIGHT_PROMO => "n",
+            Self::BISHOP_PROMO => "b",
+            Self::ROOK_PROMO => "r",
+            Self::QUEEEN_PROMO => "q",
+            _ => ""
+        }
+    }
     pub fn new(from: usize, to: usize, flag: u16) -> Self {
         Self {move_value :  from as u16 | (to as u16) << 6 | flag << 12}
     }
@@ -37,7 +46,7 @@ impl Move {
         }
     }
 
-    pub const ROOK_FROM_CASTLING: [usize; 4] = [0, 7, 56, 63];
+    pub const ROOK_FROM_CASTLING: [usize; 4] = [7, 0, 63, 56];
     pub const ROOK_TO_CASTLING: [usize; 4] = [5, 3, 61, 59];
     
     pub const NO_FLAG: u16 = 0b0000;
@@ -66,7 +75,7 @@ impl MoveList {
     };
 
     pub fn push(&mut self, from : usize, to : usize, flag : u16) {
-        self.moves[self.length] = Move {move_value :  from as u16 | (to as u16) << 6 | flag << 12};
+        self.moves[self.length] = Move::new(from , to, flag);
         self.length += 1;
     } 
 

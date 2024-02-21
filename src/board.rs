@@ -112,6 +112,11 @@ impl Board {
         }
     }
 
+    pub fn square_from_str(square: &str) -> usize {
+        let square_chars =  square.chars().collect::<Vec<char>>();
+        8 * square_chars[1].to_digit(10).unwrap_or(0) as usize + square_chars[0] as usize - 105
+    } 
+
     fn find_square(file : usize, rank : usize) -> usize {
         rank * 8 + file
     }
@@ -233,7 +238,7 @@ impl Board {
             let rank = Self::find_rank(from_square);          // pawns only attack squares an enemy piece is located on, so and with enemy pieces
             let mut attacks = Attacks::pawn_attacks(from_square, self.colour_to_move) & opposite;
             let about_to_promote = rank == 1 && !is_white || rank == 6 && is_white;
-            let on_starting_square = rank != 1 && is_white || rank != 6 && !is_white;
+            let not_on_starting_square = rank != 1 && is_white || rank != 6 && !is_white;
 
             while attacks > 0 {
                 let attack_square = pop_lsb(&mut attacks);
@@ -255,7 +260,7 @@ impl Board {
                 list.push(from_square, push_square, Move::NO_FLAG);
             }
 
-            if on_starting_square {
+            if not_on_starting_square {
                 continue;
             }
 
@@ -291,19 +296,22 @@ impl Board {
     pub fn apply(&mut self, mov : Move) -> bool {
         let from_square = mov.from_square();
         let to_square = mov.to_square();
+        let flag = mov.flag();
         let orig_colour = self.colour_to_move;
         let is_white = self.colour_to_move == Colour::White;
 
         self.en_passant_sq = None;
         self.remove_piece(to_square);
-        self.set_piece(to_square, self.colour_to_move as usize, self.piece_type(from_square).unwrap() as usize);
+        if flag < Move::KNIGHT_PROMO {
+            self.set_piece(to_square, self.colour_to_move as usize, self.piece_type(from_square).unwrap() as usize)
+        };
         // change ksqs
         if self.piece_type(from_square).unwrap() == Pieces::King {
             self.king_squares[self.colour_to_move as usize] = to_square;
         };
         
         // check for flag stuff
-        match mov.flag() {
+        match flag {
             flag if flag >= Move::KNIGHT_PROMO => self.set_piece(to_square, self.colour_to_move as usize, mov.promo_piece().unwrap() as usize),
             Move::EN_PASSANT => self.remove_piece(if is_white {to_square - 8} else {to_square + 8}),
             Move::DOUBLE_PAWN_PUSH => self.en_passant_sq = Some(if is_white {to_square - 8} else {to_square + 8} as u8),
