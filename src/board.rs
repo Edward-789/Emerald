@@ -177,8 +177,7 @@ impl Board {
         // en passant
 
         board.en_passant_sq = if fen_split[3] == "-" {None} else {
-            let square_chars = fen_split[3].chars().collect::<Vec<char>>();
-            Some(8 * square_chars[1].to_digit(10).unwrap_or(0) as u8 + square_chars[0] as u8 - 105)
+            Some(Self::square_from_str(fen_split[3]).try_into().unwrap())
         };
 
         board
@@ -198,7 +197,7 @@ impl Board {
 
         // en passant stuff
         if self.en_passant_sq != None {
-            let mut en_passant_attack = Attacks::pawn_attacks(self.en_passant_sq.unwrap() as usize, enemy_colour) & us;    
+            let mut en_passant_attack = Attacks::pawn_attacks(self.en_passant_sq.unwrap() as usize, enemy_colour) & self.get_piece_colour_bitboard(Pieces::Pawn, self.colour_to_move);    
             while en_passant_attack > 0 {
 
                 let from_square = pop_lsb(&mut en_passant_attack);

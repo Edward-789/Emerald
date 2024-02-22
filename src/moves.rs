@@ -78,5 +78,5 @@ impl MoveList {
         self.moves[self.length] = Move::new(from , to, flag);
         self.length += 1;
     } 
-
+    
 }
