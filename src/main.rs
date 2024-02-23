@@ -1,16 +1,15 @@
 mod board;
+#[macro_use]
 mod utils;
 mod attacks;
 mod magics;
 mod moves;
 mod perft;
+mod perftsuite;
 
-use crate::{
-    board::Board,
-    perft::perft
-};
+use crate::
+    perft::run_perft_suite;
 
 fn main() {
-    let board = Board::read_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-    perft::<true>(&board, 4);
-}
+    run_perft_suite();
+}   

@@ -67,12 +67,14 @@ impl Masks {
     pub const RANK_8: u64 = 0xFF00000000000000;
 }
 
-pub fn pop_lsb(bitboard: &mut u64) -> usize {
-    let lsb = bitboard.trailing_zeros();
-    *bitboard &= *bitboard - 1;
-    lsb as usize
+#[macro_export]
+macro_rules! pop_lsb {
+    ($bitboard:expr) => {{
+        let lsb = $bitboard.trailing_zeros();
+        $bitboard &= $bitboard - 1;
+        lsb as usize
+    }};
 }
-
 
 pub const SQUARE_TO_STR: [&str; 64] = [
     "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
