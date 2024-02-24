@@ -1,15 +1,15 @@
 mod board;
-#[macro_use]
 mod utils;
 mod attacks;
 mod magics;
 mod moves;
 mod perft;
 mod perftsuite;
+mod uci;
 
 use crate::
-    perft::run_perft_suite;
+    uci::uci_loop;
 
 fn main() {
-    run_perft_suite();
+    uci_loop();
 }   
