@@ -1,8 +1,7 @@
 use std::{io, time::Instant};
 
 use crate::{
-    board::Board, 
-    perft::{perft, run_perft_suite}
+    board::Board, moves::MoveList, perft::{perft, run_perft_suite}
 };
 
 pub fn uci_loop() {
@@ -19,6 +18,10 @@ pub fn uci_loop() {
             break;
         } else if command == "perftsuite" {
             run_perft_suite();
+        } else if command == "uci" {
+            println!("uciok")
+        } else if command == "isready" {
+            println!("readyok");
         } else if split_command[0] == "perft" && split_command[1].parse::<u8>().is_ok() {
             let start_time = Instant::now();
             let nodes = perft::<false, false>(&board, split_command[1].parse::<u8>().unwrap());
@@ -28,15 +31,35 @@ pub fn uci_loop() {
             println!("{}{}", "NPS : ", (nodes as u128 / (start_time.elapsed().as_millis() + 1)) * 1000);
         } else if split_command[0] == "splitperft" && split_command[1].parse::<u8>().is_ok() {
             let start_time = Instant::now();
-            let nodes = perft::<false, false>(&board, split_command[1].parse::<u8>().unwrap());
+            let nodes = perft::<true, true>(&board, split_command[1].parse::<u8>().unwrap());
 
             println!();
             println!("{}{}", "Milliseconds : ", start_time.elapsed().as_millis());
             println!("{}{}", "NPS : ", (nodes as u128 / (start_time.elapsed().as_millis() + 1)) * 1000);
         } else if split_command[0] == "position" {
             board = load_position(split_command)
-        }
+        } else if split_command[0] == "go" {
+            go(split_command, board);
+        } 
     }
+}
+
+fn go(split_command : Vec<&str>, board : Board) {
+    let moves = board.psuedolegal_movegen();
+    let filtered = {
+        let mut list = MoveList::EMPTY;
+        for i in 0..moves.length {
+            let mut tmp = *&board;
+
+            if tmp.apply(moves.moves[i]) {
+                list.push(moves.moves[i].from_square(), moves.moves[i].to_square(), moves.moves[i].flag());
+            }
+        }
+
+        list
+    };
+
+    println!("{}{}", "bestmove ", filtered.moves[(split_command[2].parse::<usize>().unwrap()) % filtered.length].to_uci())
 }
 
 fn load_position(split_command : Vec<&str>) -> Board {
