@@ -203,7 +203,7 @@ impl Board {
             let mut en_passant_attack = Attacks::pawn_attacks(self.en_passant_sq as usize, enemy_colour) & self.get_piece_colour_bitboard(Pieces::Pawn, self.colour_to_move);    
             while en_passant_attack > 0 {
 
-                let from_square = pop_lsb!(*&mut en_passant_attack);
+                let from_square = pop_lsb!(en_passant_attack);
                 list.push(from_square, self.en_passant_sq as usize, Move::EN_PASSANT);
             }
         }
@@ -236,14 +236,14 @@ impl Board {
         let mut our_pawns = self.get_piece_colour_bitboard(Pieces::Pawn, self.colour_to_move);
         while our_pawns > 0 {
 
-            let from_square = pop_lsb!(*&mut our_pawns);     
+            let from_square = pop_lsb!(our_pawns);     
             let rank = Self::find_rank(from_square);          // pawns only attack squares an enemy piece is located on, so and with enemy pieces
             let mut attacks = Attacks::pawn_attacks(from_square, self.colour_to_move) & opposite;
             let about_to_promote = rank == 1 && !is_white || rank == 6 && is_white;
             let not_on_starting_square = rank != 1 && is_white || rank != 6 && !is_white;
 
             while attacks > 0 {
-                let attack_square = pop_lsb!(*&mut attacks);
+                let attack_square = pop_lsb!(attacks);
                 if about_to_promote {
                     self.handle_promotions(&mut list, from_square, attack_square);
                 } else  {
@@ -281,12 +281,12 @@ impl Board {
             let mut our_pieces = self.get_piece_colour_bitboard(piece, self.colour_to_move);
 
             while our_pieces > 0 {
-                let from_square = pop_lsb!(*&mut our_pieces);
+                let from_square = pop_lsb!(our_pieces);
     
                 let mut attacks = Attacks::get_piece_attacks(from_square, all_pieces, piece) & !us;
     
                 while attacks > 0 {
-                    let attack_square = pop_lsb!(*&mut attacks);
+                    let attack_square = pop_lsb!(attacks);
                     list.push(from_square, attack_square, Move::NO_FLAG);
                 }
             }
