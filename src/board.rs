@@ -335,42 +335,6 @@ impl Board {
         !self.square_is_attacked(self.king_squares[orig_colour as usize] as usize, orig_colour, self.bitboards[0] | self.bitboards[1])
     }
 
-    pub fn apply_uci_move(&mut self, mov: &str){  // get first and last 2 characters of move
-        let from_square = Self::square_from_str(&mov[0..2]);
-        let to_square = Self::square_from_str(&mov[2..4]);
-
-        let mut flag = Move::NO_FLAG;
-        let moving_piece = self.piece_type(from_square).unwrap();
-
-        if moving_piece == Pieces::King {
-            flag = match mov {
-                "e1g1" => Move::WHITE_KINGSIDE,
-                "e1c1" => Move::WHITE_QUEENSIDE,
-                "e8g8" => Move::BLACK_KINGSIDE,
-                "e8c8" => Move::BLACK_QUEENSIDE,
-                _ => Move::NO_FLAG
-            }
-        } else if moving_piece == Pieces::Pawn {
-            if mov.len() == 5 {
-                flag = match &mov.chars().nth(4).unwrap() {
-                    'q' => Move::QUEEEN_PROMO,
-                    'r' => Move::ROOK_PROMO,
-                    'n' => Move::KNIGHT_PROMO,
-                    'b' => Move::BISHOP_PROMO,
-                    _  => Move::NO_FLAG
-                }
-            } else {
-                let neccesary_shift = to_square.abs_diff(from_square);
-                if neccesary_shift == 16 {
-                    flag = Move::DOUBLE_PAWN_PUSH
-                } else if neccesary_shift != 8 && !self.square_is_occupied(to_square) {
-                    flag = Move::EN_PASSANT
-                }
-            }
-        }
-
-        assert!(self.apply(Move::new(from_square, to_square, flag)));
-    }
      // debug stuff
      #[allow(dead_code)]
 
@@ -382,7 +346,7 @@ impl Board {
              println!();
              println!("{}", labels[i]);
              Self::print_bitboard(self.bitboards[i]);
-             println!();
+             println!();    
          }
  
          self.print_castle_rights();

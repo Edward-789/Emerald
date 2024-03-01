@@ -39,17 +39,17 @@ pub fn uci_loop() {
         } else if split_command[0] == "position" {
             board = load_position(split_command)
         } else if split_command[0] == "go" {
-            go(split_command, board);
+            go(split_command, &board);
         } 
     }
 }
 
-fn go(split_command : Vec<&str>, board : Board) {
+fn go(split_command : Vec<&str>, board : &Board) {
     let moves = board.psuedolegal_movegen();
     let filtered = {
         let mut list = MoveList::EMPTY;
         for i in 0..moves.length {
-            let mut tmp = *&board;
+            let mut tmp = *board;
 
             if tmp.apply(moves.moves[i]) {
                 list.push(moves.moves[i].from_square(), moves.moves[i].to_square(), moves.moves[i].flag());
@@ -77,11 +77,16 @@ fn load_position(split_command : Vec<&str>) -> Board {
             fen += " ";
         }
 
-        fen = fen.trim().to_string();   // trim trailing whitespace
         board = Board::read_fen(&fen);
 
         for i in (move_start_index + 1)..split_command.len() {
-            board.apply_uci_move(split_command[i]);
+            let moves = board.psuedolegal_movegen();
+
+            for j in 0..moves.length {
+                if moves.moves[j].to_uci() == split_command[i] {
+                    board.apply(moves.moves[j]);
+                }
+            }
         }
     }
 
