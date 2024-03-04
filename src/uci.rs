@@ -16,7 +16,9 @@ pub fn uci_loop() {
 
         if command == "quit" {
             break;
-        } else if command == "perftsuite" {
+        }
+        
+        if command == "perftsuite" {
             run_perft_suite();
         } else if command == "uci" {
             println!("uciok")
@@ -64,10 +66,11 @@ fn go(split_command : Vec<&str>, board : &Board) {
 
 fn load_position(split_command : Vec<&str>) -> Board {
     let mut board = Board::read_fen(Board::STARTPOS);
+    let mut move_start_index = 0;
+
 
     if split_command[1] == "fen" {
         let mut fen = String::new();
-        let mut move_start_index = 0;
         for i in 2..split_command.len() {
             move_start_index = i;
             if split_command[i] == "moves" {
@@ -78,17 +81,20 @@ fn load_position(split_command : Vec<&str>) -> Board {
         }
 
         board = Board::read_fen(&fen);
+    } else if split_command[1] == "startpos" {
+        move_start_index = 2;
+    }
 
-        for i in (move_start_index + 1)..split_command.len() {
-            let moves = board.psuedolegal_movegen();
+    for i in (move_start_index + 1)..split_command.len() {
+        let moves = board.psuedolegal_movegen();
 
-            for j in 0..moves.length {
-                if moves.moves[j].to_uci() == split_command[i] {
-                    board.apply(moves.moves[j]);
-                }
+        for j in 0..moves.length {
+            if moves.moves[j].to_uci() == split_command[i] {
+                board.apply(moves.moves[j]);
             }
         }
     }
+
 
     board
 }
