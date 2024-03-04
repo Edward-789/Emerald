@@ -6,6 +6,7 @@ mod moves;
 mod perft;
 mod perftsuite;
 mod uci;
+mod zobrist;
 
 use crate::
     uci::uci_loop;

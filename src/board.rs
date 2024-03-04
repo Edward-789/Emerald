@@ -1,9 +1,8 @@
 use crate::{
     moves::{Move, MoveList},
-    utils::{
-        Castling, Colour, Pieces, 
-    },
+    utils::{Castling, Colour, Pieces},
     attacks::Attacks,
+    zobrist::{PIECE_HASHES, CASTLE_HASHES, STM_HASH, EN_PASSANT_HASHES},
     pop_lsb
 };
 
@@ -13,7 +12,8 @@ pub struct Board {
     colour_to_move: Colour,
     castle_rights: u8,
     en_passant_sq: u8,
-    king_squares: [u8; 2]
+    king_squares: [u8; 2],
+    pub zobrist: u64
 }
 
 impl Board {
@@ -44,6 +44,7 @@ impl Board {
         let i = 1 << square;
         self.bitboards[colour] |= i;
         self.bitboards[piece] |= i;
+        self.zobrist ^= PIECE_HASHES[colour][piece][square];
 
         if piece == Pieces::King as usize {
             self.king_squares[colour] = square as u8;
@@ -53,10 +54,13 @@ impl Board {
     fn remove_piece(&mut self, square: usize) {
         let bit = 1 << square;
 
-        self.bitboards[self.find_colour(square) as usize] &= !bit;
+        let colour = self.find_colour(square) as usize;
+        self.bitboards[colour] &= !bit;
+
         for i in 2..=7 {
             if self.bitboards[i] & bit > 0 {
-                self.bitboards[i] &= !bit
+                self.zobrist ^= PIECE_HASHES[colour][i][square];
+                self.bitboards[i] &= !bit;
             }
         }
     }
@@ -67,7 +71,6 @@ impl Board {
         for i in 2..=7 {
             if self.bitboards[i] & bit > 0 {
                 return Some(Pieces::convert_num_to_piece(i));
-
             }
         }
 
@@ -105,15 +108,16 @@ impl Board {
         }
     }
 
-    fn blank() -> Self {
-        Board {
+    const BLANK : Self = 
+        Self {
             bitboards: [0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64, 0u64],
             colour_to_move: Colour::White,
             castle_rights: 0u8,
             en_passant_sq: 0,
-            king_squares: [0, 0]
-        }
-    }
+            king_squares: [0, 0],
+            zobrist : 0
+        };
+    
 
     pub fn square_from_str(square: &str) -> usize {
         let square_chars =  square.chars().collect::<Vec<char>>();
@@ -128,7 +132,7 @@ impl Board {
         square / 8
     }
 
-    // FEN stuff
+    // position stuff
 
     pub fn read_fen(fen: &str) -> Self {
         let fen_split = fen.split(' ').collect::<Vec<&str>>();
@@ -136,7 +140,7 @@ impl Board {
 
         let mut rank = 7u8;
         let mut file = 0u8;
-        let mut board = Self::blank();
+        let mut board = Self::BLANK;
 
         // pieces
         for symbol in pieces {
@@ -163,7 +167,12 @@ impl Board {
         }
 
         // stm
-        board.colour_to_move = if fen_split[1].chars().collect::<Vec<char>>()[0] == 'w' {Colour::White} else {Colour::Black};
+        board.colour_to_move = if fen_split[1].chars().collect::<Vec<char>>()[0] == 'w' {
+            board.zobrist ^= STM_HASH;
+            Colour::White
+        } else {Colour::Black};
+
+
 
         // castling
         let castle_symbols = fen_split[2].chars().collect::<Vec<char>>();
@@ -173,21 +182,23 @@ impl Board {
                 if symbol == 'K' { Castling::WHITE_KING } else
                 if symbol == 'Q' { Castling::WHITE_QUEEN } else
                 if symbol == 'k' { Castling::BLACK_KING } else
-                if symbol == 'q' { Castling::BLACK_QUEEN } else {0}
-                                
+                if symbol == 'q' { Castling::BLACK_QUEEN } else {0}        
         }
 
+        board.zobrist ^= CASTLE_HASHES[board.castle_rights as usize];
         // en passant
 
         board.en_passant_sq = if fen_split[3] == "-" {0} else {
-            Self::square_from_str(fen_split[3]).try_into().unwrap()
+            let square = Self::square_from_str(fen_split[3]);
+            board.zobrist ^= EN_PASSANT_HASHES[square];
+            square.try_into().unwrap()
         };
+
 
         board
     }
 
     //movegen and makemove
-
     pub fn psuedolegal_movegen(&self) -> MoveList {
         let mut list = MoveList::EMPTY;
 
@@ -302,8 +313,16 @@ impl Board {
         let orig_colour = self.colour_to_move;
         let is_white = self.colour_to_move == Colour::White;
 
-        self.en_passant_sq = 0;
+        self.zobrist ^= STM_HASH;
+
+        // remove en passant hash 
+        if self.en_passant_sq != 0 {
+            self.zobrist ^= EN_PASSANT_HASHES[self.en_passant_sq as usize];
+            self.en_passant_sq = 0;
+        }
+
         self.remove_piece(to_square);
+
         if flag < Move::KNIGHT_PROMO {
             self.set_piece(to_square, self.colour_to_move as usize, self.piece_type(from_square).unwrap() as usize)
         };
@@ -316,7 +335,10 @@ impl Board {
         match flag {
             flag if flag >= Move::KNIGHT_PROMO => self.set_piece(to_square, self.colour_to_move as usize, mov.promo_piece().unwrap() as usize),
             Move::EN_PASSANT => self.remove_piece(if is_white {to_square - 8} else {to_square + 8}),
-            Move::DOUBLE_PAWN_PUSH => self.en_passant_sq = if is_white {to_square - 8} else {to_square + 8} as u8,
+            Move::DOUBLE_PAWN_PUSH => {
+                self.en_passant_sq = if is_white {to_square - 8} else {to_square + 8} as u8;
+                self.zobrist ^= EN_PASSANT_HASHES[self.en_passant_sq as usize];
+            }
             flag if flag >= Move::WHITE_KINGSIDE && flag <= Move::BLACK_QUEENSIDE => {
                 self.remove_piece(Move::ROOK_FROM_CASTLING[(flag - 1) as usize]);
                 self.set_piece(Move::ROOK_TO_CASTLING[(flag - 1) as usize], self.colour_to_move as usize, Pieces::Rook as usize)
@@ -325,8 +347,14 @@ impl Board {
         }
         
         //update castle rights
+        // remove castle rights 
+        self.zobrist ^= CASTLE_HASHES[self.castle_rights as usize];
+
         self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[from_square];
         self.castle_rights &= Castling::CASTLE_RIGHT_MASKS[to_square];
+
+        // re-add castle rights
+        self.zobrist ^= CASTLE_HASHES[self.castle_rights as usize];
 
         self.remove_piece(from_square);
         self.colour_to_move = self.enemy_colour();
