@@ -1,13 +1,14 @@
 use std::{io, time::Instant};
 
 use crate::{
-    board::Board, moves::MoveList, perft::{perft, run_perft_suite}
+    board::Board, perft::{perft, run_perft_suite}, search::Searcher, utils::Colour
 };
 
 pub fn uci_loop() {
     let mut board = Board::read_fen(Board::STARTPOS);
     loop {
         let mut input = String::new();
+        let mut zobrist_history = Vec::new();
 
         io::stdin().read_line(&mut input).unwrap();
 
@@ -39,32 +40,26 @@ pub fn uci_loop() {
             println!("{}{}", "Milliseconds : ", start_time.elapsed().as_millis());
             println!("{}{}", "NPS : ", (nodes as u128 / (start_time.elapsed().as_millis() + 1)) * 1000);
         } else if split_command[0] == "position" {
-            board = load_position(split_command)
+            board = load_position(split_command, &mut zobrist_history);
         } else if split_command[0] == "go" {
-            go(split_command, &board);
+            go(split_command, &board, zobrist_history);
         } 
     }
 }
 
-fn go(split_command : Vec<&str>, board : &Board) {
-    let moves = board.psuedolegal_movegen();
-    let filtered = {
-        let mut list = MoveList::EMPTY;
-        for i in 0..moves.length {
-            let mut tmp = *board;
+fn go(split_command : Vec<&str>, board : &Board, zobrist_history : Vec<u64>) {
+    let max_time = if board.colour_to_move == Colour::White { split_command[2].parse::<u128>().unwrap() } 
+        else { split_command[2].parse::<u128>().unwrap() };
+    
+    let mut searcher = Searcher::new(max_time, zobrist_history);
 
-            if tmp.apply(moves.moves[i]) {
-                list.push(moves.moves[i].from_square(), moves.moves[i].to_square(), moves.moves[i].flag());
-            }
-        }
+    searcher.search(Searcher::SCORE_MATE, -Searcher::SCORE_MATE, 5, board, 0);
+    let move_to_play = searcher.best_move;
 
-        list
-    };
-
-    println!("{}{}", "bestmove ", filtered.moves[(split_command[2].parse::<usize>().unwrap()) % filtered.length].to_uci())
+    println!("{}{}", "bestmove ", move_to_play.to_uci());
 }
 
-fn load_position(split_command : Vec<&str>) -> Board {
+fn load_position(split_command : Vec<&str>, zobrist_history : &mut Vec<u64>) -> Board {
     let mut board = Board::read_fen(Board::STARTPOS);
     let mut move_start_index = 0;
 
@@ -86,6 +81,7 @@ fn load_position(split_command : Vec<&str>) -> Board {
     }
 
     for i in (move_start_index + 1)..split_command.len() {
+        zobrist_history.push(board.zobrist);
         let moves = board.psuedolegal_movegen();
 
         for j in 0..moves.length {

@@ -7,6 +7,9 @@ mod perft;
 mod perftsuite;
 mod uci;
 mod zobrist;
+mod search;
+mod eval;
+
 
 use crate::
     uci::uci_loop;

@@ -9,7 +9,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct Board {
     bitboards: [u64; 8],
-    colour_to_move: Colour,
+    pub colour_to_move: Colour,
     castle_rights: u8,
     en_passant_sq: u8,
     king_squares: [u8; 2],
@@ -36,7 +36,7 @@ impl Board {
         }
     }
 
-    fn get_piece_colour_bitboard(&self, piece: Pieces, colour: Colour) -> u64 {
+    pub fn get_piece_colour_bitboard(&self, piece: Pieces, colour: Colour) -> u64 {
         self.bitboards[piece as usize] & self.bitboards[colour as usize]
     }
 
@@ -87,7 +87,7 @@ impl Board {
         }
     }
 
-    fn in_check(&self) -> bool {
+    pub fn in_check(&self) -> bool {
         self.square_is_attacked(self.king_squares[self.colour_to_move as usize] as usize, self.colour_to_move, self.bitboards[0] | self.bitboards[1])
     }
 
@@ -413,4 +413,3 @@ impl Board {
  
      }
 }
-
