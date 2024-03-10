@@ -6,6 +6,7 @@ use crate::{
 
 pub fn uci_loop() {
     let mut board = Board::read_fen(Board::STARTPOS);
+    let mut searcher = Searcher::new(0, Vec::new());
     loop {
         let mut input = String::new();
         let mut zobrist_history = Vec::new();
@@ -42,21 +43,20 @@ pub fn uci_loop() {
         } else if split_command[0] == "position" {
             board = load_position(split_command, &mut zobrist_history);
         } else if split_command[0] == "go" {
-            go(split_command, &board, zobrist_history);
+            go(split_command, &board, zobrist_history, &mut searcher);
         } 
     }
 }
 
-fn go(split_command : Vec<&str>, board : &Board, zobrist_history : Vec<u64>) {
-    let max_time = if board.colour_to_move == Colour::White { split_command[2].parse::<u128>().unwrap() } 
+fn go(split_command : Vec<&str>, board : &Board, zobrist_history : Vec<u64>, searcher : &mut Searcher) {
+    searcher.zobrist_history = zobrist_history;
+
+    searcher.max_time = if board.colour_to_move == Colour::White { split_command[2].parse::<u128>().unwrap() }
         else { split_command[2].parse::<u128>().unwrap() };
-    
-    let mut searcher = Searcher::new(max_time, zobrist_history);
 
     searcher.search(Searcher::SCORE_MATE, -Searcher::SCORE_MATE, 5, board, 0);
-    let move_to_play = searcher.best_move;
 
-    println!("{}{}", "bestmove ", move_to_play.to_uci());
+    println!("{}{}", "bestmove ", searcher.best_move.to_uci())
 }
 
 fn load_position(split_command : Vec<&str>, zobrist_history : &mut Vec<u64>) -> Board {

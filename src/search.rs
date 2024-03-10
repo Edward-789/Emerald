@@ -5,9 +5,9 @@ use crate::{board::Board, eval::eval, moves::Move};
 
 #[allow(dead_code)]
 pub struct Searcher {
-    max_time : u128,
-    timer : Instant,
-    zobrist_history : Vec<u64>,
+    pub max_time : u128,
+    pub timer : Instant,
+    pub zobrist_history : Vec<u64>,
     pub best_move : Move
 }
 
