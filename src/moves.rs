@@ -1,6 +1,6 @@
 use crate::utils::{Pieces, SQUARE_TO_STR};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Move {
     move_value : u16 
 }
@@ -78,5 +78,4 @@ impl MoveList {
         self.moves[self.length] = Move::new(from , to, flag);
         self.length += 1;
     } 
-    
 }

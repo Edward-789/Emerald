@@ -26,6 +26,8 @@ pub fn uci_loop() {
             println!("uciok")
         } else if command == "isready" {
             println!("readyok");
+        } else if command == "ucinewgame" {
+            searcher.tt.clear();
         } else if split_command[0] == "perft" && split_command[1].parse::<u8>().is_ok() {
             let start_time = Instant::now();
             let nodes = perft::<false, false>(&board, split_command[1].parse::<u8>().unwrap());
@@ -54,6 +56,7 @@ fn go(split_command : Vec<&str>, board : &Board, zobrist_history : Vec<u64>, sea
     searcher.max_time = if board.colour_to_move == Colour::White { split_command[2].parse::<u128>().unwrap() }
         else { split_command[2].parse::<u128>().unwrap() };
 
+    searcher.timer = Instant::now();
     searcher.search(Searcher::SCORE_MATE, -Searcher::SCORE_MATE, 5, board, 0);
 
     println!("{}{}", "bestmove ", searcher.best_move.to_uci())

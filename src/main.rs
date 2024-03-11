@@ -9,7 +9,7 @@ mod uci;
 mod zobrist;
 mod search;
 mod eval;
-
+mod tt;
 
 use crate::
     uci::uci_loop;
