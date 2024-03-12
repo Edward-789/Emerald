@@ -65,7 +65,7 @@ impl Board {
         }
     }
 
-    fn piece_type(&self, square: usize) -> Option<Pieces> {
+    pub fn piece_type(&self, square: usize) -> Option<Pieces> {
         let bit = 1 << square;
 
         for i in 2..=7 {
@@ -199,7 +199,7 @@ impl Board {
     }
 
     //movegen and makemove
-    pub fn psuedolegal_movegen(&self) -> MoveList {
+    pub fn psuedolegal_movegen(&self, captures_only : bool) -> MoveList {
         let mut list = MoveList::EMPTY;
 
         let enemy_colour = self.enemy_colour();
@@ -220,7 +220,8 @@ impl Board {
         }
         // castling
 
-        if self.castle_rights & Castling::CASTLE_FLAG_MASKS[self.colour_to_move as usize] > 0 && !self.in_check(){
+        
+        if !captures_only && self.castle_rights & Castling::CASTLE_FLAG_MASKS[self.colour_to_move as usize] > 0 && !self.in_check(){
             if ((self.castle_rights & Castling::WHITE_KING > 0 && self.colour_to_move == Colour::White) || 
                 (self.castle_rights & Castling::BLACK_KING > 0 && self.colour_to_move == Colour::Black)) &&
                 !self.square_is_occupied(king_square + 1) &&
@@ -262,6 +263,10 @@ impl Board {
                 }
             }
 
+            if captures_only { 
+                continue; 
+            }
+
             let push_square = if is_white {from_square + 8} else {from_square - 8};
             if self.square_is_occupied(push_square) {
                 continue;
@@ -294,7 +299,7 @@ impl Board {
             while our_pieces > 0 {
                 let from_square = pop_lsb!(our_pieces);
     
-                let mut attacks = Attacks::get_piece_attacks(from_square, all_pieces, piece) & !us;
+                let mut attacks = Attacks::get_piece_attacks(from_square, all_pieces, piece) & if captures_only {opposite} else {!us};
     
                 while attacks > 0 {
                     let attack_square = pop_lsb!(attacks);

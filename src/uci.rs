@@ -88,7 +88,7 @@ fn load_position(split_command : Vec<&str>, zobrist_history : &mut Vec<u64>) -> 
 
     for i in (move_start_index + 1)..split_command.len() {
         zobrist_history.push(board.zobrist);
-        let moves = board.psuedolegal_movegen();
+        let moves = board.psuedolegal_movegen(false);
 
         for j in 0..moves.length {
             if moves.moves[j].to_uci() == split_command[i] {

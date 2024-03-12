@@ -30,7 +30,7 @@ impl Searcher {
         }
     }
 
-    pub fn search(&mut self, mut alpha : i32, beta : i32, depth: u8, board: &Board, ply: u8) -> i32 {
+    fn search(&mut self, mut alpha : i32, beta : i32, depth: u8, board: &Board, ply: u8) -> i32 {
         let root = ply == 0;
         let leaf = depth == 1;
         let mut moves_played = 0;
@@ -42,16 +42,17 @@ impl Searcher {
         }
 
         let tt_entry = self.tt.get_entry(board.zobrist);
-
+        let mut moves = board.psuedolegal_movegen(false);
         let mut scores = [0; 218];
-        let mut moves = board.psuedolegal_movegen();
-
         
         for i in 0..moves.length {
             let mov = moves.moves[i];
 
-            scores[i] = if mov == tt_entry.best_move && tt_entry.hash == board.zobrist{1_000_000} else {0};
+            scores[i] = if mov == tt_entry.best_move && tt_entry.hash == board.zobrist{1_000_000} else 
+                        if board.piece_type(mov.to_square()) != None { (10_000 * (board.piece_type(mov.to_square()).unwrap() as usize)) - (board.piece_type(mov.from_square()).unwrap() as usize)} else 
+                        {0};
         }
+
 
         for i in 0..moves.length {
             if self.timer.elapsed().as_millis() * 30 > self.max_time {

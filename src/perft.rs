@@ -6,7 +6,7 @@ use crate::{
 };
 
 pub fn perft<const ROOT : bool, const SPLIT : bool>(board : &Board, depth : u8) -> u64 {
-    let movelist = board.psuedolegal_movegen();
+    let movelist = board.psuedolegal_movegen(false);
 
     let mut positions = 0;
     let leaf = depth == 1;
