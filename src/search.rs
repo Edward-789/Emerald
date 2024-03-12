@@ -54,9 +54,9 @@ impl Searcher {
         }
 
         for i in 0..moves.length {
-            // if self.timer.elapsed().as_millis() * 30 > self.max_time {
-            //     return -(Self::SCORE_MATE + 1);
-            // }
+            if self.timer.elapsed().as_millis() * 30 > self.max_time {
+                return -Self::SCORE_MATE;
+            }
 
             //incremental sort
 
@@ -100,14 +100,14 @@ impl Searcher {
         best_score
     }
 
-    // pub fn iterative_deepening(&mut self, board : &Board) {
-    //     for i in 0..255 {
+    pub fn iterative_deepening(&mut self, board : &Board) {
+        for i in 2..255 {
 
-    //         self.search(Self::SCORE_MATE, -Self::SCORE_MATE, 5, board, 0);
+            self.search(Self::SCORE_MATE, -Self::SCORE_MATE, i, board, 0);
             
-    //         if self.timer.elapsed().as_millis() * 30 > self.max_time {
-    //             break;
-    //         }
-    //     }
-    // }
-}
+            if self.timer.elapsed().as_millis() * 30 > self.max_time {
+                break;
+            }
+        }
+    }
+}   

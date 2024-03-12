@@ -53,11 +53,14 @@ pub fn uci_loop() {
 fn go(split_command : Vec<&str>, board : &Board, zobrist_history : Vec<u64>, searcher : &mut Searcher) {
     searcher.zobrist_history = zobrist_history;
 
-    searcher.max_time = if board.colour_to_move == Colour::White { split_command[2].parse::<u128>().unwrap() }
-        else { split_command[2].parse::<u128>().unwrap() };
-
+    for i in 0..split_command.len() {
+        if split_command[i] == "btime" && board.colour_to_move == Colour::Black ||
+           split_command[i] == "wtime" && board.colour_to_move == Colour::White {
+                searcher.max_time = split_command[i + 1].parse::<u128>().unwrap();
+           }
+    }
     searcher.timer = Instant::now();
-    searcher.search(Searcher::SCORE_MATE, -Searcher::SCORE_MATE, 5, board, 0);
+    searcher.iterative_deepening(board);
 
     println!("{}{}", "bestmove ", searcher.best_move.to_uci())
 }
