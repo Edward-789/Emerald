@@ -49,7 +49,7 @@ impl Searcher {
             let mov = moves.moves[i];
 
             scores[i] = if mov == tt_entry.best_move && tt_entry.hash == board.zobrist{1_000_000} else 
-                        if board.piece_type(mov.to_square()) != None { (10_000 * (board.piece_type(mov.to_square()).unwrap() as usize)) - (board.piece_type(mov.from_square()).unwrap() as usize)} else 
+                        if board.move_is_capture(mov) { (10_000 * (board.piece_type(mov.capture_square()).unwrap() as usize)) - (board.piece_type(mov.from_square()).unwrap() as usize)} else 
                         {0};
         }
 

@@ -1,4 +1,4 @@
-use crate::utils::{Pieces, SQUARE_TO_STR};
+use crate::{board::Board, utils::{Pieces, SQUARE_TO_STR}};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Move {
@@ -46,6 +46,19 @@ impl Move {
         }
     }
 
+    pub fn capture_square(&self) -> usize {
+        let to_square = self.to_square();
+        if self.flag() != Self::EN_PASSANT {
+            return to_square;
+        }
+
+        if Board::find_rank(to_square) == 5 {
+            to_square - 8
+        } else {
+            to_square + 8
+        }
+    }
+
     pub const ROOK_FROM_CASTLING: [usize; 4] = [7, 0, 63, 56];
     pub const ROOK_TO_CASTLING: [usize; 4] = [5, 3, 61, 59];
     
@@ -77,5 +90,5 @@ impl MoveList {
     pub fn push(&mut self, from : usize, to : usize, flag : u16) {
         self.moves[self.length] = Move::new(from , to, flag);
         self.length += 1;
-    } 
+    }  
 }

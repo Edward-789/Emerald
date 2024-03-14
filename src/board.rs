@@ -128,8 +128,12 @@ impl Board {
         rank * 8 + file
     }
 
-    fn find_rank(square : usize) -> usize {
+    pub fn find_rank(square : usize) -> usize {
         square / 8
+    }
+
+    pub fn move_is_capture(&self, mov : Move) -> bool {
+        self.piece_type(mov.capture_square()) != None
     }
 
     // position stuff
@@ -298,7 +302,7 @@ impl Board {
 
             while our_pieces > 0 {
                 let from_square = pop_lsb!(our_pieces);
-    
+                
                 let mut attacks = Attacks::get_piece_attacks(from_square, all_pieces, piece) & if captures_only {opposite} else {!us};
     
                 while attacks > 0 {
