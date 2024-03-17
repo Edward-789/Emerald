@@ -38,7 +38,7 @@ impl Searcher {
         let mut best_move = Move::NULL;
 
         if leaf {
-            return Evaluator::eval(board)
+            return self.qsearch(alpha, beta, board);
         }
 
         let tt_entry = self.tt.get_entry(board.zobrist);
@@ -101,6 +101,62 @@ impl Searcher {
         best_score
     }
     
+    fn qsearch(&self, mut alpha : i32, beta : i32, board : &Board) -> i32 {
+
+        let mut eval = Evaluator::eval(board);
+
+        if eval >= beta {
+            return eval;
+        }
+
+        let tt_entry = self.tt.get_entry(board.zobrist);
+
+        alpha = alpha.max(eval);
+        let mut moves = board.psuedolegal_movegen(true);
+        let mut scores = [0; 218];
+        
+
+        for i in 0..moves.length {
+            let mov = moves.moves[i];
+
+            scores[i] = if tt_entry.best_move == mov && tt_entry.hash == board.zobrist {1_000_000} else {
+                    10000 * (board.piece_type(mov.capture_square()).unwrap() as usize) - (board.piece_type(mov.from_square()).unwrap() as usize)
+            }    
+        }
+
+        for i in 0..moves.length {
+            if self.timer.elapsed().as_millis() * 30 > self.max_time {
+                return -Self::SCORE_MATE;
+            }
+
+            for j in i + 1..moves.length {
+                if scores[j] > scores[i] {
+                    scores.swap(j, i);
+                    moves.moves.swap(j, i);
+                }
+            }
+            let mov = moves.moves[i];
+            let mut next_board = *board;
+
+            if !next_board.apply(mov) {
+                continue;
+            };
+
+            let score = -self.qsearch(-beta, -alpha, &next_board);
+
+            if score > eval {
+                eval = score;
+                if score > alpha {
+                    alpha = score;
+                }
+                if alpha > beta {
+                    break;
+                }
+            }   
+        }
+
+        eval
+    }
     pub fn iterative_deepening(&mut self, board : &Board) {
         for i in 2..255 {
 
