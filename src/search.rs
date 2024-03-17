@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::{board::Board, eval::eval, moves::Move, tt::TTable};
+use crate::{board::Board, eval::Evaluator, moves::Move, tt::TTable};
 
 
 #[allow(dead_code)]
@@ -38,7 +38,7 @@ impl Searcher {
         let mut best_move = Move::NULL;
 
         if leaf {
-            return eval(board);
+            return Evaluator::eval(board)
         }
 
         let tt_entry = self.tt.get_entry(board.zobrist);
@@ -100,7 +100,7 @@ impl Searcher {
 
         best_score
     }
-
+    
     pub fn iterative_deepening(&mut self, board : &Board) {
         for i in 2..255 {
 
@@ -111,4 +111,4 @@ impl Searcher {
             }
         }
     }
-}   
+}       

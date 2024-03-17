@@ -10,6 +10,7 @@ mod zobrist;
 mod search;
 mod eval;
 mod tt;
+mod eval_consts;
 
 use crate::
     uci::uci_loop;
