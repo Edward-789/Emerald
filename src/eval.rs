@@ -14,7 +14,7 @@ impl Evaluator {
 
                 let mut piece_colour_bb = board.get_piece_colour_bitboard(piece_type, stm);
                 while piece_colour_bb > 0 {
-                    let idx = pop_lsb!(piece_colour_bb) ^ if stm == Colour::White {56} else {1};
+                    let idx = pop_lsb!(piece_colour_bb) ^ if stm == Colour::White {56} else {0};
 
                     mg += Self::MG_PSTS[i][idx] + Self::MG_PIECE_VALS[i];
                     eg += Self::EG_PSTS[i][idx] + Self::EG_PIECE_VALS[i];
