@@ -30,6 +30,16 @@ impl Searcher {
         }
     }
 
+    fn is_repetition(&self, hash : u64) -> bool {
+        for i in 0..self.zobrist_history.len() - 1 {
+            if self.zobrist_history[i] == hash {
+                return true;
+            }
+        }
+
+        false
+    }
+
     fn search(&mut self, mut alpha : i32, beta : i32, depth: u8, board: &Board, ply: u8) -> i32 {
         let root = ply == 0;
         let leaf = depth == 1;
@@ -39,6 +49,10 @@ impl Searcher {
 
         if leaf {
             return self.qsearch(alpha, beta, board);
+        }
+
+        if !root && self.is_repetition(board.zobrist) {
+            return 0;
         }
 
         let tt_entry = self.tt.get_entry(board.zobrist);
@@ -75,8 +89,13 @@ impl Searcher {
             };
 
             moves_played += 1;
+
+            self.zobrist_history.push(board.zobrist);
+
             let score = -self.search(-beta, -alpha, depth - 1, &next_board, ply + 1);
             
+            self.zobrist_history.pop();
+
             if score > best_score {
                 best_score = score;
                 best_move = mov;
@@ -102,6 +121,10 @@ impl Searcher {
     }
     
     fn qsearch(&self, mut alpha : i32, beta : i32, board : &Board) -> i32 {
+
+        if self.is_repetition(board.zobrist) {
+            return 0;
+        }
 
         let mut eval = Evaluator::eval(board);
 
