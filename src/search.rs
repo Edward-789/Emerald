@@ -26,7 +26,7 @@ impl Searcher {
             timer : Instant::now(),
             zobrist_history,
             best_move : Move::NULL,
-            tt : TTable::new(524288)
+            tt : TTable::new(16)
         }
     }
 
