@@ -1,5 +1,3 @@
-use std::mem::size_of;
-
 use crate::moves::Move;
 
 #[derive(Clone, Copy)]
@@ -19,8 +17,7 @@ pub struct TTable {
 }
 
 impl TTable {
-    pub fn new(size_mb : usize) -> Self {
-        let length = size_mb * 1024 * 1024 / size_of::<TranspositionEntry>();
+    pub fn new(length : usize) -> Self {
         Self {
             entries : vec![TranspositionEntry::NULL_ENTRY; length]
         }
