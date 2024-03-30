@@ -46,6 +46,7 @@ impl Searcher {
         let mut moves_played = 0;
         let mut best_score = -20000; 
         let mut best_move = Move::NULL;
+        let in_check = board.in_check();
 
         if leaf {
             return self.qsearch(alpha, beta, board);
@@ -81,21 +82,26 @@ impl Searcher {
                     moves.moves.swap(j, i);
                 }
             }
+
             let mov = moves.moves[i];
             let mut next_board = *board;
 
             if !next_board.apply(mov) {
                 continue;
-            };
-
+            }
             moves_played += 1;
 
             self.zobrist_history.push(board.zobrist);
 
-            let score = -self.search(-beta, -alpha, depth - 1, &next_board, ply + 1);
-            
-            self.zobrist_history.pop();
+            let mut extension = 0;
+            if in_check {
+                extension += 1;
+            }
 
+            let score = -self.search(-beta, -alpha, depth + extension - 1, &next_board, ply + 1);
+        
+            self.zobrist_history.pop();
+            
             if score > best_score {
                 best_score = score;
                 best_move = mov;
