@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use crate::moves::Move;
 
 #[derive(Clone, Copy)]
@@ -17,15 +19,23 @@ pub struct TTable {
 }
 
 impl TTable {
-    pub fn new(length : usize) -> Self {
-        Self {
-            entries : vec![TranspositionEntry::NULL_ENTRY; length]
-        }
+    pub fn new(size_mb : usize) -> Self {
+        let mut tt = TTable {
+            entries : vec![]
+        };
+
+        tt.resize(size_mb);
+        tt
+    }
+
+    pub fn resize(&mut self, size_mb : usize) {
+        let length = size_mb * 1024 * 1024 / size_of::<TranspositionEntry>();
+        self.entries.resize(length, TranspositionEntry::NULL_ENTRY);
     }
 
     pub fn get_entry(&self, hash : u64) -> TranspositionEntry {
         self.entries[hash as usize % self.entries.len()]
-    }
+    }   
 
     pub fn store(&mut self, best_move : Move, hash : u64) {
         let entry_length = self.entries.len();
@@ -36,8 +46,8 @@ impl TTable {
     }
 
     pub fn clear(&mut self) {
-        let len = self.entries.len();
-
-        self.entries = Self::new(len).entries;
-    }
+        for i in 0..self.entries.len() {
+            self.entries[i] = TranspositionEntry::NULL_ENTRY;
+        }
+    }    
 }
