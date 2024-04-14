@@ -98,7 +98,16 @@ impl Searcher {
                 extension += 1;
             }
 
-            let score = -self.search(-beta, -alpha, depth + extension - 1, &next_board, ply + 1);
+            let mut score;
+            if moves_played == 1 {
+                score = -self.search(-beta, -alpha, depth + extension - 1, &next_board, ply + 1);
+            } else {
+                score = -self.search(-alpha - 1, -alpha, depth + extension - 1, &next_board, ply + 1);
+                
+                if score > alpha && score < beta {
+                    score = -self.search(-beta, -alpha, depth + extension - 1, &next_board, ply + 1);
+                }
+            }
         
             self.zobrist_history.pop();
             
